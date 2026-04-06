@@ -60,6 +60,16 @@ def create_user(username, password):
     except:
         return False
 
+def get_user_detailed_progress(user):
+    cursor.execute("""
+        SELECT task_key, completed
+        FROM progress
+        WHERE user = ?
+    """, (user,))
+    rows = cursor.fetchall()
+
+    return pd.DataFrame(rows, columns=["Task", "Completed"])
+
 
 def login_user(username, password):
     # ✅ ADMIN LOGIN (HARDCODED & SECURE)
@@ -385,6 +395,34 @@ if role == "admin":
         st.dataframe(df, use_container_width=True)
     else:
         st.info("No data yet")
+
+    # -------------------------
+    # USER PROGRESS VIEW (NEW)
+    # -------------------------
+    st.markdown("---")
+    st.subheader("📊 User Detailed Progress")
+
+    users_df = pd.read_sql_query("SELECT username FROM users", conn)
+
+    if not users_df.empty:
+        user_list = users_df["username"].tolist()
+
+        selected_user_progress = st.selectbox(
+            "Select user to view progress",
+            user_list,
+            key="progress_view"
+        )
+
+        if selected_user_progress:
+            progress_df = get_user_detailed_progress(selected_user_progress)
+
+            if not progress_df.empty:
+                progress_df["Completed"] = progress_df["Completed"].apply(
+                    lambda x: "✅ Completed" if x == 1 else "❌ Not Completed"
+                )
+                st.dataframe(progress_df, use_container_width=True)
+            else:
+                st.info("No progress data for this user")
 
     # -------------------------
     # ADMIN PANEL
