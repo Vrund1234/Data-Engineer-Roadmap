@@ -417,6 +417,19 @@ if role == "admin":
             progress_df = get_user_detailed_progress(selected_user_progress)
 
             if not progress_df.empty:
+                progress_df["Phase"] = progress_df["Task"].apply(lambda x: x.split("-")[0])
+                progress_df["Category"] = progress_df["Task"].apply(lambda x: x.split("-")[1])
+                progress_df["Topic"] = progress_df["Task"].apply(lambda x: x.split("-")[2])
+
+                progress_df["Completed"] = progress_df["Completed"].apply(
+                    lambda x: "✅ Completed" if x == 1 else "❌ Not Completed"
+                )
+
+                progress_df = progress_df[["Phase", "Category", "Topic", "Completed"]]
+
+                st.dataframe(progress_df, use_container_width=True)
+                
+            if not progress_df.empty:
                 progress_df["Completed"] = progress_df["Completed"].apply(
                     lambda x: "✅ Completed" if x == 1 else "❌ Not Completed"
                 )
