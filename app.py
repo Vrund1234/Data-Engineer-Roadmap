@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 import hashlib
 from quiz import run_quiz
+import os 
 
 # -----------------------------
 # CONFIG
@@ -20,7 +21,14 @@ ADMIN_PASSWORD = "vrund@&2024"
 # -----------------------------
 # DATABASE SETUP
 # -----------------------------
-conn = sqlite3.connect("progress.db", check_same_thread=False)
+# conn = sqlite3.connect("progress.db", check_same_thread=False)
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "progress.db")
+
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+cursor = conn.cursor()
 cursor = conn.cursor()
 
 cursor.execute("""
