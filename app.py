@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import hashlib
+from quiz import run_quiz
 
 # -----------------------------
 # CONFIG
@@ -338,8 +339,22 @@ roadmap = {
 # NAVIGATION
 # -----------------------------
 st.sidebar.title("Navigation")
-selected_phase = st.sidebar.radio("Select Phase", list(roadmap.keys()))
 
+menu_option = st.sidebar.radio(
+    "Navigation",
+    ["Roadmap", "SQL Quiz"]
+)
+
+# 👉 QUIZ MODE
+if menu_option == "SQL Quiz":
+    run_quiz(username, role)
+    st.stop()
+
+# 👉 ROADMAP MODE (ONLY HERE define selected_phase)
+selected_phase = st.sidebar.radio(
+    "Select Phase",
+    list(roadmap.keys())
+)
 # -----------------------------
 # UI
 # -----------------------------

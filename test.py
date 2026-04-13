@@ -1,9 +1,10 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
+import hashlib
 
 # -----------------------------
-# PAGE CONFIG
+# CONFIG
 # -----------------------------
 st.set_page_config(
     page_title="Data Engineer Roadmap",
@@ -11,11 +12,22 @@ st.set_page_config(
     layout="wide"
 )
 
+# 🔐 ADMIN CREDENTIALS (FIXED)
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "vrund@&2024"
+
 # -----------------------------
 # DATABASE SETUP
 # -----------------------------
 conn = sqlite3.connect("progress.db", check_same_thread=False)
 cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    password TEXT
+)
+""")
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS progress (
@@ -25,11 +37,58 @@ CREATE TABLE IF NOT EXISTS progress (
     PRIMARY KEY (user, task_key)
 )
 """)
+
 conn.commit()
 
 # -----------------------------
-# DB FUNCTIONS
+# HELPER FUNCTIONS
 # -----------------------------
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def create_user(username, password):
+    if username == ADMIN_USERNAME:
+        return False  # prevent creating admin manually
+    try:
+        cursor.execute(
+            "INSERT INTO users (username, password) VALUES (?, ?)",
+            (username, hash_password(password))
+        )
+        conn.commit()
+        return True
+    except:
+        return False
+
+def get_user_detailed_progress(user):
+    cursor.execute("""
+        SELECT task_key, completed
+        FROM progress
+        WHERE user = ?
+    """, (user,))
+    rows = cursor.fetchall()
+
+    return pd.DataFrame(rows, columns=["Task", "Completed"])
+
+
+def login_user(username, password):
+    # ✅ ADMIN LOGIN (HARDCODED & SECURE)
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        return {"username": ADMIN_USERNAME, "role": "admin"}
+
+    # Normal user login
+    cursor.execute(
+        "SELECT * FROM users WHERE username=? AND password=?",
+        (username, hash_password(password))
+    )
+    user = cursor.fetchone()
+
+    if user:
+        return {"username": username, "role": "user"}
+
+    return None
+
+
 def load_progress(user):
     cursor.execute("SELECT task_key, completed FROM progress WHERE user = ?", (user,))
     rows = cursor.fetchall()
@@ -54,25 +113,94 @@ def get_leaderboard():
     """
     return pd.read_sql_query(query, conn)
 
-# -----------------------------
-# USER LOGIN
-# -----------------------------
-st.sidebar.title("User Login")
-username = st.sidebar.text_input("Enter your username")
 
-if not username:
-    st.warning("Please enter a username to continue.")
+# -----------------------------
+# ADMIN FUNCTIONS
+# -----------------------------
+def delete_user(target_user):
+    cursor.execute("DELETE FROM users WHERE username = ?", (target_user,))
+    cursor.execute("DELETE FROM progress WHERE user = ?", (target_user,))
+    conn.commit()
+
+
+def reset_all_progress():
+    cursor.execute("DELETE FROM progress")
+    conn.commit()
+
+
+def delete_all_data():
+    cursor.execute("DELETE FROM users")
+    cursor.execute("DELETE FROM progress")
+    conn.commit()
+
+
+# -----------------------------
+# AUTH STATE
+# -----------------------------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+# -----------------------------
+# AUTH UI
+# -----------------------------
+st.sidebar.title("Authentication")
+
+menu = st.sidebar.selectbox("Select Option", ["Login", "Signup"])
+
+if not st.session_state.authenticated:
+
+    username = st.sidebar.text_input("Username")
+    password = st.sidebar.text_input("Password", type="password")
+
+    if menu == "Signup":
+        if st.sidebar.button("Create Account"):
+            if create_user(username, password):
+                st.success("Account created! Please login.")
+            else:
+                st.error("Username not allowed or already exists.")
+
+    elif menu == "Login":
+        if st.sidebar.button("Login"):
+            user = login_user(username, password)
+            if user:
+                st.session_state.authenticated = True
+                st.session_state.username = user["username"]
+                st.session_state.role = user["role"]
+
+                st.session_state.completed = load_progress(user["username"])
+                st.session_state.current_user = user["username"]
+
+                st.success("Logged in successfully")
+                st.rerun()
+            else:
+                st.error("Invalid username or password")
+
     st.stop()
+
+# -----------------------------
+# LOGGED IN USER
+# -----------------------------
+username = st.session_state.username
+role = st.session_state.role
+
+# Logout
+if st.sidebar.button("Logout"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
 
 # -----------------------------
 # LOAD USER DATA
 # -----------------------------
-if "completed" not in st.session_state:
+if (
+    "completed" not in st.session_state
+    or "current_user" not in st.session_state
+    or st.session_state.current_user != username
+):
     st.session_state.completed = load_progress(username)
+    st.session_state.current_user = username
 
-# -----------------------------
-# RESET BUTTON
-# -----------------------------
+# Reset own progress
 if st.sidebar.button("Reset My Progress"):
     cursor.execute("DELETE FROM progress WHERE user = ?", (username,))
     conn.commit()
@@ -80,45 +208,33 @@ if st.sidebar.button("Reset My Progress"):
     st.rerun()
 
 # -----------------------------
-# ROADMAP DATA
+# ROADMAP
 # -----------------------------
 roadmap = {
     "Phase 1: SQL + Python Foundation": {
         "SQL": [
-            "SQL Setup & Basics",
-            "Filtering Data (WHERE)",
-            "Aggregations (COUNT, SUM, AVG)",
-            "GROUP BY & ORDER BY",
-            "SQL Joins",
-            "SQL Practice"
+            "SQL Setup & Basics", "Filtering Data (WHERE)",
+            "Aggregations (COUNT, SUM, AVG)", "GROUP BY & ORDER BY",
+            "SQL Joins", "SQL Practice"
         ],
         "Python": [
-            "Python Basics",
-            "Python Data Structures",
-            "Pandas Introduction",
-            "Pandas Transformations"
+            "Python Basics", "Python Data Structures",
+            "Pandas Introduction", "Pandas Transformations"
         ]
     },
     "Phase 2: SQL Mastery and Databases": {
         "Databases": [
-            "PostgreSQL Basics",
-            "MySQL Basics",
-            "SQL Server (T-SQL)",
-            "Cloud Databases"
+            "PostgreSQL Basics", "MySQL Basics",
+            "SQL Server (T-SQL)", "Cloud Databases"
         ],
         "Advanced SQL": [
-            "Window Functions",
-            "CTE (WITH Clause)",
-            "Subqueries",
-            "Indexes and Performance",
-            "Query Optimization",
-            "Views and Materialized Views",
-            "Stored Procedures",
-            "Transactions",
-            "Advanced SQL Practice"
+            "Window Functions", "CTE (WITH Clause)", "Subqueries",
+            "Indexes and Performance", "Query Optimization",
+            "Views and Materialized Views", "Stored Procedures",
+            "Transactions", "Advanced SQL Practice"
         ]
     },
-    "Phase 3: Data Architecture": {
+        "Phase 3: Data Architecture": {
         "Core Concepts": [
             "What is a Database",
             "What is a Data Warehouse",
@@ -219,20 +335,17 @@ roadmap = {
 }
 
 # -----------------------------
-# SIDEBAR NAVIGATION
+# NAVIGATION
 # -----------------------------
 st.sidebar.title("Navigation")
 selected_phase = st.sidebar.radio("Select Phase", list(roadmap.keys()))
 
 # -----------------------------
-# MAIN HEADER
+# UI
 # -----------------------------
 st.title("Data Engineer Roadmap")
-st.markdown(f"Tracking progress for: **{username}**")
+st.markdown(f"Logged in as: **{username}**")
 
-# -----------------------------
-# DISPLAY PHASE
-# -----------------------------
 phase_data = roadmap[selected_phase]
 
 phase_total = 0
@@ -259,47 +372,101 @@ for category, topics in phase_data.items():
             phase_completed += 1
 
 # -----------------------------
-# PHASE PROGRESS
+# PROGRESS
 # -----------------------------
 st.markdown("---")
-st.subheader("Phase Progress")
+st.subheader("Progress")
 
-phase_progress = int((phase_completed / phase_total) * 100)
-st.progress(phase_progress / 100)
-
-col1, col2 = st.columns(2)
-col1.metric("Completed Tasks", f"{phase_completed}/{phase_total}")
-col2.metric("Completion Percentage", f"{phase_progress}%")
+progress = int((phase_completed / phase_total) * 100)
+st.progress(progress / 100)
+st.write(f"{phase_completed}/{phase_total} tasks completed ({progress}%)")
 
 # -----------------------------
-# OVERALL PROGRESS
+# ADMIN SECTION
 # -----------------------------
-total_tasks = len(st.session_state.completed)
-completed_tasks = sum(st.session_state.completed.values())
+if role == "admin":
 
-st.markdown("---")
-st.subheader("Overall Progress")
+    st.markdown("---")
+    st.subheader("🏆 Leaderboard")
 
-overall_progress = int((completed_tasks / total_tasks) * 100) if total_tasks else 0
-st.progress(overall_progress / 100)
+    df = get_leaderboard()
+    if not df.empty:
+        df.index = df.index + 1
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("No data yet")
 
-col1, col2 = st.columns(2)
-col1.metric("Total Completed", f"{completed_tasks}/{total_tasks}")
-col2.metric("Overall Percentage", f"{overall_progress}%")
+    # -------------------------
+    # USER PROGRESS VIEW (NEW)
+    # -------------------------
+    st.markdown("---")
+    st.subheader("📊 User Detailed Progress")
 
-# -----------------------------
-# LEADERBOARD
-# -----------------------------
-st.markdown("---")
-st.subheader("Leaderboard")
+    users_df = pd.read_sql_query("SELECT username FROM users", conn)
 
-leaderboard_df = get_leaderboard()
+    if not users_df.empty:
+        user_list = users_df["username"].tolist()
 
-if not leaderboard_df.empty:
-    leaderboard_df.index = leaderboard_df.index + 1
-    st.dataframe(leaderboard_df, use_container_width=True)
-else:
-    st.info("No data available yet.")
+        selected_user_progress = st.selectbox(
+            "Select user to view progress",
+            user_list,
+            key="progress_view"
+        )
 
+        if selected_user_progress:
+            progress_df = get_user_detailed_progress(selected_user_progress)
 
-i also want password with username
+            if not progress_df.empty:
+                progress_df["Phase"] = progress_df["Task"].apply(lambda x: x.split("-")[0])
+                progress_df["Category"] = progress_df["Task"].apply(lambda x: x.split("-")[1])
+                progress_df["Topic"] = progress_df["Task"].apply(lambda x: x.split("-")[2])
+
+                progress_df["Completed"] = progress_df["Completed"].apply(
+                    lambda x: "✅ Completed" if x == 1 else "❌ Not Completed"
+                )
+
+                progress_df = progress_df[["Phase", "Category", "Topic", "Completed"]]
+
+                st.dataframe(progress_df, use_container_width=True)
+                
+            if not progress_df.empty:
+                progress_df["Completed"] = progress_df["Completed"].apply(
+                    lambda x: "✅ Completed" if x == 1 else "❌ Not Completed"
+                )
+                st.dataframe(progress_df, use_container_width=True)
+            else:
+                st.info("No progress data for this user")
+
+    # -------------------------
+    # ADMIN PANEL
+    # -------------------------
+    st.markdown("---")
+    st.subheader("⚙️ Admin Panel")
+
+    users_df = pd.read_sql_query("SELECT username FROM users", conn)
+
+    if not users_df.empty:
+        user_list = users_df["username"].tolist()
+
+        st.markdown("### 🗑️ Delete User")
+        selected_user = st.selectbox("Select user", user_list)
+
+        if st.button("Delete User"):
+            delete_user(selected_user)
+            st.success(f"{selected_user} deleted")
+            st.rerun()
+
+    st.markdown("### 🔄 Reset All Progress")
+    if st.button("Reset All Users Progress"):
+        reset_all_progress()
+        st.success("All progress reset")
+        st.rerun()
+
+    st.markdown("### 💀 Danger Zone")
+    confirm = st.text_input("Type DELETE to confirm")
+
+    if confirm == "DELETE":
+        if st.button("Delete ALL Data"):
+            delete_all_data()
+            st.success("Everything deleted")
+            st.rerun()
