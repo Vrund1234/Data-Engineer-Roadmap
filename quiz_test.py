@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS quiz_results (
 conn.commit()
 
 # -----------------------------
-# QUESTIONS
+# MCQ QUESTIONS (POOL)
 # -----------------------------
 mcq_questions = [
     {
@@ -172,87 +172,98 @@ mcq_questions = [
     }
 ]
 
-# 🔥 UPDATED QUERY QUESTIONS (WITH FULL CONTEXT)
+# -----------------------------
+# QUERY QUESTIONS (5)
+# -----------------------------
 query_questions = [
     {
         "question": "Find employees hired after 2023",
-        "table_name": "employees",
-        "columns": [
-            ("emp_id", "INT"),
-            ("name", "TEXT"),
-            ("department", "TEXT"),
-            ("salary", "INT"),
-            ("hire_date", "DATE")
-        ],
-        "sample_data": [
-            (1, "Alice", "IT", 60000, "2022-05-10"),
-            (2, "Bob", "HR", 50000, "2024-01-15"),
-            (3, "Charlie", "IT", 70000, "2023-07-20")
-        ],
+        "schema": """
+Table: employees
+Columns:
+- emp_id (INT)
+- name (TEXT)
+- department (TEXT)
+- salary (INT)
+- hire_date (DATE)
+""",
         "answer_keywords": ["select", "from employees", "hire_date", "2023"]
     },
     {
-        "question": "Find duplicate emails",
-        "table_name": "users",
-        "columns": [
-            ("user_id", "INT"),
-            ("name", "TEXT"),
-            ("email", "TEXT")
-        ],
-        "sample_data": [
-            (1, "John", "john@gmail.com"),
-            (2, "Jane", "jane@gmail.com"),
-            (3, "Jake", "john@gmail.com")
-        ],
+        "question": "Find duplicate emails from users table",
+        "schema": """
+Table: users
+Columns:
+- user_id (INT)
+- name (TEXT)
+- email (TEXT)
+""",
         "answer_keywords": ["group by", "email", "count", "having"]
     },
     {
         "question": "Find 3rd highest salary",
-        "table_name": "employees",
-        "columns": [
-            ("emp_id", "INT"),
-            ("name", "TEXT"),
-            ("salary", "INT")
-        ],
-        "sample_data": [
-            (1, "A", 50000),
-            (2, "B", 70000),
-            (3, "C", 60000),
-            (4, "D", 80000)
-        ],
+        "schema": """
+Table: employees
+Columns:
+- emp_id (INT)
+- name (TEXT)
+- salary (INT)
+""",
         "answer_keywords": ["salary", "order by", "desc"]
+    },
+    {
+        "question": "Count employees in each department",
+        "schema": """
+Table: employees
+Columns:
+- emp_id (INT)
+- name (TEXT)
+- department (TEXT)
+""",
+        "answer_keywords": ["group by", "department", "count"]
+    },
+    {
+        "question": "Find beverages with fruit percentage between 35 and 40",
+        "schema": """
+Table: beverages
+Columns:
+- id (INT)
+- name (TEXT)
+- fruit_pct (INT)
+""",
+        "answer_keywords": ["between", "35", "40", "fruit_pct"]
     }
 ]
-
-# -----------------------------
-# RESET FUNCTION
-# -----------------------------
-def reset_quiz():
-    keys_to_delete = ["start_time", "mcq_set", "query_set", "submitted"]
-
-    for key in keys_to_delete:
-        if key in st.session_state:
-            del st.session_state[key]
-
-    for key in list(st.session_state.keys()):
-        if key.startswith("mcq_") or key.startswith("query_"):
-            del st.session_state[key]
-
-    st.rerun()
 
 # -----------------------------
 # QUIZ FUNCTION
 # -----------------------------
 def run_quiz(username, role):
 
-    st.title("🧠 SQL Quiz (Pro Mode)")
+    st.title("🧠 SQL Quiz (Anti-Cheat Mode)")
 
-    # RETAKE
-    if st.button("🔄 Retake Quiz"):
-        reset_quiz()
+    # -----------------------------
+    # ANTI-CHEAT JS
+    # -----------------------------
+    st.markdown("""
+    <script>
+    document.addEventListener('paste', e => {
+        e.preventDefault();
+        alert('Paste disabled!');
+    });
 
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            alert('Tab switch detected!');
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+
+    # -----------------------------
     # TIMER
-    QUIZ_DURATION = 600
+    # -----------------------------
+    QUIZ_DURATION = 600  # 10 mins
 
     if "start_time" not in st.session_state:
         st.session_state.start_time = time.time()
@@ -262,15 +273,16 @@ def run_quiz(username, role):
 
     if remaining <= 0:
         st.error("⏰ Time's up!")
-        st.button("🔄 Retake Quiz", on_click=reset_quiz)
         st.stop()
 
     st.warning(f"⏳ Time Left: {remaining} sec")
 
-    # RANDOM QUESTIONS
+    # -----------------------------
+    # RANDOMIZE QUESTIONS
+    # -----------------------------
     if "mcq_set" not in st.session_state:
-        st.session_state.mcq_set = random.sample(mcq_questions, len(mcq_questions))
-        st.session_state.query_set = random.sample(query_questions, len(query_questions))
+        st.session_state.mcq_set = random.sample(mcq_questions, 10)
+        st.session_state.query_set = random.sample(query_questions, 3)
 
     mcq_set = st.session_state.mcq_set
     query_set = st.session_state.query_set
@@ -295,32 +307,14 @@ def run_quiz(username, role):
 
     for i, q in enumerate(query_set):
         st.subheader(f"Q{i+1}. {q['question']}")
-
-        # 👉 TABLE INFO
-        st.markdown(f"### 📂 Table: `{q['table_name']}`")
-
-        # 👉 COLUMN INFO
-        col_df = pd.DataFrame(q["columns"], columns=["Column Name", "Data Type"])
-        st.markdown("#### 🧱 Columns")
-        st.dataframe(col_df, use_container_width=True)
-
-        # 👉 SAMPLE DATA
-        sample_df = pd.DataFrame(q["sample_data"], columns=[col[0] for col in q["columns"]])
-        st.markdown("#### 📊 Sample Data")
-        st.dataframe(sample_df, use_container_width=True)
-
-        # 👉 INPUT
-        ans = st.text_area("Write SQL query:", key=f"query_{i}")
+        st.info(f"Schema: {q['schema']}")
+        ans = st.text_area("Write query:", key=f"query_{i}")
         query_answers.append(ans)
 
     # -----------------------------
     # SUBMIT
     # -----------------------------
-    if st.button("Submit Quiz"):
-
-        if "--" in mcq_answers:
-            st.error("Answer all MCQs first")
-            return
+    if st.button("Submit"):
 
         score = 0
         total = len(mcq_set) + len(query_set)
@@ -332,50 +326,51 @@ def run_quiz(username, role):
 
         # QUERY
         for i, q in enumerate(query_set):
-            user = query_answers[i].lower().strip()
-
-            if user and all(k in user for k in q["answer_keywords"]):
+            user = query_answers[i].lower()
+            if all(k in user for k in q["answer_keywords"]):
                 score += 1
-            else:
-                st.error(f"Query {i+1} ❌ Incorrect")
 
         percent = round((score / total) * 100, 2)
 
-        st.success(f"🎯 Score: {score}/{total}")
-        st.info(f"📊 Percentage: {percent}%")
+        st.success(f"Score: {score}/{total}")
+        st.info(f"Percentage: {percent}%")
 
-        # SAVE
         cursor.execute("""
-        INSERT INTO quiz_results (username, score, total, percentage, submitted_at)
-        VALUES (?, ?, ?, ?, ?)
-        """, (username, score, total, percent,
-              datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        INSERT INTO quiz_results VALUES (NULL, ?, ?, ?, ?, ?)
+        """, (username, score, total, percent, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
 
-        st.success("✅ Quiz Submitted Successfully!")
-
-        if "start_time" in st.session_state:
-            del st.session_state.start_time
-
-        st.button("🔄 Retake Quiz", on_click=reset_quiz)
+        # reset timer
+        del st.session_state.start_time
 
     # -----------------------------
-    # HISTORY
+    # USER HISTORY VIEW
     # -----------------------------
     st.markdown("---")
     st.subheader("📊 Your Quiz History")
 
-    user_df = pd.read_sql_query("""
-        SELECT score, total, percentage, submitted_at
-        FROM quiz_results
+    user_df = pd.read_sql_query(
+        """
+        SELECT score, total, percentage, submitted_at 
+        FROM quiz_results 
         WHERE username = ?
         ORDER BY id DESC
-    """, conn, params=(username,))
+        """,
+        conn,
+        params=(username,)
+    )
 
     if not user_df.empty:
         st.dataframe(user_df, use_container_width=True)
+
+        # 🔥 Highlight latest attempt
+        latest = user_df.iloc[0]
+
+        st.markdown("### 🏆 Latest Performance")
+        st.success(f"Score: {latest['score']}/{latest['total']}")
+        st.info(f"Percentage: {latest['percentage']}%")
     else:
-        st.info("No quiz attempts yet 🚀")
+        st.info("No quiz attempts yet. Take your first quiz 🚀")
 
     # -----------------------------
     # ADMIN VIEW
@@ -384,11 +379,10 @@ def run_quiz(username, role):
         st.markdown("---")
         st.subheader("📊 All Quiz Attempts")
 
-        df = pd.read_sql_query("""
-            SELECT username, score, total, percentage, submitted_at
-            FROM quiz_results
-            ORDER BY id DESC
-        """, conn)
+        df = pd.read_sql_query(
+            "SELECT username, score, total, percentage, submitted_at FROM quiz_results ORDER BY id DESC",
+            conn
+        )
 
         if not df.empty:
             st.dataframe(df, use_container_width=True)
