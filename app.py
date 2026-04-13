@@ -202,11 +202,11 @@ if (
     st.session_state.current_user = username
 
 # Reset own progress
-if st.sidebar.button("Reset My Progress"):
-    cursor.execute("DELETE FROM progress WHERE user = ?", (username,))
-    conn.commit()
-    st.session_state.completed = {}
-    st.rerun()
+# if st.sidebar.button("Reset My Progress"):
+#     cursor.execute("DELETE FROM progress WHERE user = ?", (username,))
+#     conn.commit()
+#     st.session_state.completed = {}
+#     st.rerun()
 
 # -----------------------------
 # ROADMAP
