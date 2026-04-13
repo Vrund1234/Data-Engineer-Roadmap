@@ -323,6 +323,36 @@ def run_quiz(username, role):
         """, (username, score, total, percentage, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
 
+
+    # -----------------------------
+    # USER HISTORY VIEW
+    # -----------------------------
+    st.markdown("---")
+    st.subheader("📊 Your Quiz History")
+
+    user_df = pd.read_sql_query(
+        """
+        SELECT score, total, percentage, submitted_at 
+        FROM quiz_results 
+        WHERE username = ?
+        ORDER BY id DESC
+        """,
+        conn,
+        params=(username,)
+    )
+
+    if not user_df.empty:
+        st.dataframe(user_df, use_container_width=True)
+
+        # 🔥 Highlight latest attempt
+        latest = user_df.iloc[0]
+
+        st.markdown("### 🏆 Latest Performance")
+        st.success(f"Score: {latest['score']}/{latest['total']}")
+        st.info(f"Percentage: {latest['percentage']}%")
+    else:
+        st.info("No quiz attempts yet. Take your first quiz 🚀")
+
     # -----------------------------
     # ADMIN VIEW
     # -----------------------------
