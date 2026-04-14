@@ -308,7 +308,7 @@ def submit_quiz(username, mcq_set, query_set, mcq_answers, query_answers):
 # -----------------------------
 def run_quiz(username, role):
 
-    st.title("🧠 SQL Quiz (Pro Mode)")
+    st.title("🧠 SQL Quiz")
 
     # RETAKE
     if st.button("🔄 Retake Quiz", key="retake_top"):
