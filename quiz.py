@@ -217,7 +217,8 @@ query_questions = [
             (2, "Bob", "HR", 50000, "2024-01-15"),
             (3, "Charlie", "IT", 70000, "2023-07-20")
         ],
-        "answer_keywords": ["select", "from employees", "hire_date", "2023"]
+        "answer_keywords": ["select", "from employees", "hire_date", "2023"],
+        "correct_query": "SELECT * FROM employees WHERE hire_date > '2023-01-01';"
     },
     {
         "question": "Find duplicate emails",
@@ -232,7 +233,8 @@ query_questions = [
             (2, "Jane", "jane@gmail.com"),
             (3, "Jake", "john@gmail.com")
         ],
-        "answer_keywords": ["group by", "email", "count", "having"]
+        "answer_keywords": ["group by", "email", "count", "having"],
+        "correct_query": "SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*) > 1;"
     },
     {
         "question": "Find 3rd highest salary",
@@ -248,9 +250,11 @@ query_questions = [
             (3, "C", 60000),
             (4, "D", 80000)
         ],
-        "answer_keywords": ["salary", "order by", "desc"]
+        "answer_keywords": ["salary", "order by", "desc"],
+        "correct_query": "SELECT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 2;"
     }
 ]
+
 
 # -----------------------------
 # RESET FUNCTION
@@ -359,6 +363,7 @@ def run_quiz(username, role):
         )
         query_answers.append(ans)
 
+
     # -----------------------------
     # SUBMIT
     # -----------------------------
@@ -374,8 +379,48 @@ def run_quiz(username, role):
             username, mcq_set, query_set, mcq_answers, query_answers
         )
 
-        st.success(f"🎯 Score: {score}/{total}")
-        st.info(f"📊 Percentage: {percent}%")
+        # ✅ STORE RESULTS
+        st.session_state.score = score
+        st.session_state.total = total
+        st.session_state.percent = percent
+        st.session_state.mcq_answers = mcq_answers
+        st.session_state.query_answers = query_answers
+
+    # -----------------------------
+    # SHOW RESULTS (PERSISTENT)
+    # -----------------------------
+    if st.session_state.get("submitted", False):
+
+        st.success(f"🎯 Score: {st.session_state.score}/{st.session_state.total}")
+        st.info(f"📊 Percentage: {st.session_state.percent}%")
+
+        st.markdown("---")
+        st.subheader("✅ Review Answers")
+
+        # MCQ REVIEW
+        st.markdown("### 📘 MCQs Review")
+        for i, q in enumerate(mcq_set):
+            user_ans = st.session_state.mcq_answers[i]
+            correct_ans = q["answer"]
+
+            if user_ans == correct_ans:
+                st.success(f"Q{i+1}: Correct ✅")
+            else:
+                st.error(f"Q{i+1}: Wrong ❌")
+                st.write(f"Your Answer: {user_ans}")
+                st.write(f"Correct Answer: {correct_ans}")
+
+        # QUERY REVIEW
+        st.markdown("### 💻 SQL Query Review")
+        for i, q in enumerate(query_set):
+            user_ans = st.session_state.query_answers[i].lower().strip()
+
+            if user_ans and all(k in user_ans for k in q["answer_keywords"]):
+                st.success(f"Query {i+1}: Correct ✅")
+            else:
+                st.error(f"Query {i+1}: Wrong ❌")
+                st.write("Expected keywords:")
+                st.code(q["correct_query"], language="sql")
 
         st.button("🔄 Retake Quiz", key="retake_after_submit", on_click=reset_quiz)
 
