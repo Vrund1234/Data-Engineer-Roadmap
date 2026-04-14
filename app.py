@@ -19,36 +19,62 @@ ADMIN_PASSWORD = "vrund@&2024"
 # -----------------------------
 # DATABASE CONNECTION
 # -----------------------------
-conn = psycopg2.connect(
-    host=st.secrets["DB_HOST"],
-    database=st.secrets["DB_NAME"],
-    user=st.secrets["DB_USER"],
-    password=st.secrets["DB_PASS"],
-    port="5432"
-)
+@st.cache_resource
+def get_connection():
+    conn = psycopg2.connect(
+        host=st.secrets["DB_HOST"],
+        database=st.secrets["DB_NAME"],
+        user=st.secrets["DB_USER"],
+        password=st.secrets["DB_PASS"],
+        port="5432",
+        sslmode="require"
+    )
+    conn.autocommit = True
+    return conn
 
+
+def get_safe_connection():
+    try:
+        conn = get_connection()
+        conn.cursor().execute("SELECT 1")
+    except:
+        get_connection.clear()
+        conn = get_connection()
+    return conn
+
+
+# ✅ ADD THIS
+conn = get_safe_connection()
 cursor = conn.cursor()
+
 
 # -----------------------------
 # CREATE TABLES
 # -----------------------------
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    username TEXT PRIMARY KEY,
-    password TEXT
-)
-""")
+def init_db():
+    conn = get_safe_connection()
+    cursor = conn.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS progress (
-    username TEXT,
-    task_key TEXT,
-    completed INTEGER,
-    PRIMARY KEY (username, task_key)
-)
-""")
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        password TEXT
+    )
+    """)
 
-conn.commit()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS progress (
+        username TEXT,
+        task_key TEXT,
+        completed INTEGER,
+        PRIMARY KEY (username, task_key)
+    )
+    """)
+
+    conn.commit()
+    cursor.close()
+
+init_db()
 
 # -----------------------------
 # HELPERS
@@ -57,8 +83,9 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def create_user(username, password):
-    if username == ADMIN_USERNAME:
-        return False
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
     try:
         cursor.execute(
             "INSERT INTO users (username, password) VALUES (%s, %s)",
@@ -68,39 +95,57 @@ def create_user(username, password):
         return True
     except:
         return False
+    finally:
+        cursor.close()
 
 def login_user(username, password):
     if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
         return {"username": ADMIN_USERNAME, "role": "admin"}
+
+    conn = get_safe_connection()
+    cursor = conn.cursor()
 
     cursor.execute(
         "SELECT * FROM users WHERE username=%s AND password=%s",
         (username, hash_password(password))
     )
     user = cursor.fetchone()
+    cursor.close()
 
     if user:
         return {"username": username, "role": "user"}
     return None
 
 def load_progress(user):
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
     cursor.execute(
         "SELECT task_key, completed FROM progress WHERE username=%s",
         (user,)
     )
     rows = cursor.fetchall()
+    cursor.close()
+
     return {row[0]: bool(row[1]) for row in rows}
 
 def save_progress(user, task_key, completed):
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
     cursor.execute("""
         INSERT INTO progress (username, task_key, completed)
         VALUES (%s, %s, %s)
         ON CONFLICT (username, task_key)
         DO UPDATE SET completed = EXCLUDED.completed
     """, (user, task_key, int(completed)))
+
     conn.commit()
+    cursor.close()
 
 def get_leaderboard():
+    conn = get_safe_connection()
+
     return pd.read_sql("""
         SELECT username, COUNT(*) as completed_tasks
         FROM progress
@@ -110,30 +155,53 @@ def get_leaderboard():
     """, conn)
 
 def get_user_detailed_progress(user):
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
     cursor.execute("""
         SELECT task_key, completed
         FROM progress
         WHERE username=%s
     """, (user,))
+
     rows = cursor.fetchall()
+    cursor.close()
+
     return pd.DataFrame(rows, columns=["Task", "Completed"])
 
 # -----------------------------
 # ADMIN FUNCTIONS
 # -----------------------------
 def delete_user(target_user):
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
     cursor.execute("DELETE FROM users WHERE username=%s", (target_user,))
     cursor.execute("DELETE FROM progress WHERE username=%s", (target_user,))
+
     conn.commit()
+    cursor.close()
+
 
 def reset_all_progress():
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
     cursor.execute("DELETE FROM progress")
+
     conn.commit()
+    cursor.close()
+
 
 def delete_all_data():
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
     cursor.execute("DELETE FROM users")
     cursor.execute("DELETE FROM progress")
+
     conn.commit()
+    cursor.close()
 
 # -----------------------------
 # AUTH STATE
@@ -193,11 +261,11 @@ roadmap = {
         "SQL": [
             "SQL Setup & Basics", "Filtering Data (WHERE)",
             "Aggregations (COUNT, SUM, AVG)", "GROUP BY & ORDER BY",
-            "SQL Joins", "SQL Practice"
+            "SQL Joins", "SQL Practice", "Complete SQL Tutorial from W3 School"
         ],
         "Python": [
-            "Python Basics", "Python Data Structures",
-            "Pandas Introduction", "Pandas Transformations"
+            "Python Basics", " Ptyhon Data Types",
+            "Pandas Introduction", "Pandas & Numpy", "Complete Python Tutorial from W3 School"
         ]
     },
     "Phase 2: SQL Mastery and Databases": {

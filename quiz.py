@@ -11,31 +11,49 @@ import random
 
 @st.cache_resource
 def get_connection():
-    return psycopg2.connect(
+    conn = psycopg2.connect(
         host=st.secrets["DB_HOST"],
         database=st.secrets["DB_NAME"],
         user=st.secrets["DB_USER"],
         password=st.secrets["DB_PASS"],
-        port="5432"
+        port="5432",
+        sslmode="require"
     )
+    conn.autocommit = True
+    return conn
 
-conn = get_connection()
-cursor = conn.cursor()
+
+def get_safe_connection():
+    try:
+        conn = get_connection()
+        conn.cursor().execute("SELECT 1")
+    except:
+        get_connection.clear()
+        conn = get_connection()
+    return conn
 
 # -----------------------------
-# CREATE TABLE
+# INIT TABLE
 # -----------------------------
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS quiz_results (
-    id SERIAL PRIMARY KEY,
-    username TEXT,
-    score INTEGER,
-    total INTEGER,
-    percentage REAL,
-    submitted_at TEXT
-)
-""")
-conn.commit()
+def init_db():
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS quiz_results (
+        id SERIAL PRIMARY KEY,
+        username TEXT,
+        score INTEGER,
+        total INTEGER,
+        percentage REAL,
+        submitted_at TEXT
+    )
+    """)
+
+    cursor.close()
+
+init_db()
+
 
 # -----------------------------
 # QUESTIONS
@@ -356,12 +374,17 @@ def run_quiz(username, role):
         st.info(f"📊 Percentage: {percent}%")
 
         # SAVE
+        conn = get_safe_connection()
+        cursor = conn.cursor()
+
         cursor.execute("""
         INSERT INTO quiz_results (username, score, total, percentage, submitted_at)
         VALUES (%s, %s, %s, %s, %s)
         """, (username, score, total, percent,
-              datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
         conn.commit()
+        cursor.close()
 
         st.success("✅ Quiz Submitted Successfully!")
 
@@ -375,6 +398,8 @@ def run_quiz(username, role):
     # -----------------------------
     st.markdown("---")
     st.subheader("📊 Your Quiz History")
+
+    conn = get_safe_connection()
 
     user_df = pd.read_sql_query("""
         SELECT score, total, percentage, submitted_at
@@ -394,6 +419,8 @@ def run_quiz(username, role):
     if role == "admin":
         st.markdown("---")
         st.subheader("📊 All Quiz Attempts")
+
+        conn = get_safe_connection()
 
         df = pd.read_sql_query("""
             SELECT username, score, total, percentage, submitted_at
