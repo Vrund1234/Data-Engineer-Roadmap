@@ -3,6 +3,7 @@ import psycopg2
 import pandas as pd
 import hashlib
 from quiz import run_quiz
+from python_quiz import run_python_quiz
 
 # -----------------------------
 # CONFIG
@@ -259,28 +260,60 @@ if st.sidebar.button("Logout"):
 roadmap = {
     "Phase 1: SQL + Python Foundation": {
         "SQL": [
-            "SQL Setup & Basics", "Filtering Data (WHERE)",
-            "Aggregations (COUNT, SUM, AVG)", "GROUP BY & ORDER BY",
-            "SQL Joins", "SQL Practice", "Complete SQL Tutorial from W3 School"
+            "SQL Setup & Basics",
+            "SELECT Statement",
+            "Filtering Data (WHERE)",
+            "Sorting (ORDER BY)",
+            "Aggregate Functions (COUNT, SUM, AVG, MAX)",
+            "GROUP BY & HAVING",
+            "DISTINCT & NULL Handling",
+            "SQL Joins (INNER, LEFT, RIGHT)",
+            "UNION vs UNION ALL",
+            "Constraints (PRIMARY KEY, FOREIGN KEY, UNIQUE)",
+            "SQL Practice (Basic Queries)",
+            "Complete SQL Tutorial from W3 School"
         ],
         "Python": [
-            "Python Basics", " Ptyhon Data Types",
-            "Pandas Introduction", "Pandas & Numpy", "Complete Python Tutorial from W3 School"
+            "Python Basics",
+            "Python Data Types",
+            "Operators (==, is, in)",
+            "Control Flow (if, loops)",
+            "Functions & Lambda",
+            "String Operations (split, slicing, upper)",
+            "List Operations (append, pop, indexing)",
+            "Dictionary Operations",
+            "Sets in Python",
+            "File Handling (read/write modes)",
+            "Pandas Introduction",
+            "Numpy Basics",
+            "Python Coding Practice",
+            "Complete Python Tutorial from W3 School"
         ]
     },
+
     "Phase 2: SQL Mastery and Databases": {
         "Databases": [
-            "PostgreSQL Basics", "MySQL Basics",
-            "SQL Server (T-SQL)", "Cloud Databases"
+            "PostgreSQL Basics",
+            "MySQL Basics",
+            "SQL Server (T-SQL)",
+            "Cloud Databases"
         ],
         "Advanced SQL": [
-            "Window Functions", "CTE (WITH Clause)", "Subqueries",
-            "Indexes and Performance", "Query Optimization",
-            "Views and Materialized Views", "Stored Procedures",
-            "Transactions", "Advanced SQL Practice"
+            "Window Functions (RANK, DENSE_RANK, ROW_NUMBER)",
+            "CTE (WITH Clause)",
+            "Subqueries",
+            "Indexes and Performance",
+            "Query Optimization",
+            "Views and Materialized Views",
+            "Stored Procedures",
+            "Transactions (ACID Properties)",
+            "Advanced Joins",
+            "Real-world SQL Problems",
+            "SQL Query Practice (Intermediate + Advanced)"
         ]
     },
-        "Phase 3: Data Architecture": {
+
+    "Phase 3: Data Architecture": {
         "Core Concepts": [
             "What is a Database",
             "What is a Data Warehouse",
@@ -299,6 +332,7 @@ roadmap = {
             "Architecture Diagram Task"
         ]
     },
+
     "Phase 4: Data Pipelines and Big Data": {
         "Pipeline Basics": [
             "ETL vs ELT",
@@ -318,6 +352,7 @@ roadmap = {
             "ETL Pipeline Project"
         ]
     },
+
     "Phase 5: Databricks, Snowflake and Cloud": {
         "Databricks": [
             "Workspace and Notebooks",
@@ -351,6 +386,7 @@ roadmap = {
             "Integration Project"
         ]
     },
+
     "Phase 6: Data Visualization": {
         "Power BI": [
             "Power BI Basics",
@@ -380,10 +416,14 @@ roadmap = {
     }
 }
 st.sidebar.title("Navigation")
-menu_option = st.sidebar.radio("Navigation", ["Roadmap", "SQL Quiz"])
+menu_option = st.sidebar.radio("Navigation", ["Roadmap", "SQL Quiz", "Python Quiz"])
 
 if menu_option == "SQL Quiz":
     run_quiz(username, role)
+    st.stop()
+
+if menu_option == "Python Quiz":
+    run_python_quiz(username, role)
     st.stop()
 
 selected_phase = st.sidebar.radio("Select Phase", list(roadmap.keys()))
