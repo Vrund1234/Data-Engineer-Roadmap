@@ -197,6 +197,162 @@ mcq_questions = [
         "question": "Which ACID property ensures all or nothing?",
         "options": ["Consistency", "Atomicity", "Isolation", "Durability"],
         "answer": "Atomicity"
+    },
+    # ---------------- NEW (FROM YOUR LIST) ----------------
+    {
+        "question": "Which SQL statement is used to retrieve data?",
+        "options": ["GET", "SELECT", "FETCH", "EXTRACT"],
+        "answer": "SELECT"
+    },
+    {
+        "question": "Which clause is used to filter records?",
+        "options": ["ORDER BY", "WHERE", "GROUP BY", "SELECT"],
+        "answer": "WHERE"
+    },
+    {
+        "question": "What does COUNT(*) do?",
+        "options": [
+            "Counts columns",
+            "Counts rows including NULLs",
+            "Counts only non-null values",
+            "Returns total columns"
+        ],
+        "answer": "Counts rows including NULLs"
+    },
+    {
+        "question": "Which keyword removes duplicate rows?",
+        "options": ["UNIQUE", "DISTINCT", "REMOVE", "FILTER"],
+        "answer": "DISTINCT"
+    },
+    {
+        "question": "What is the default sort order of ORDER BY?",
+        "options": ["DESC", "ASC", "RANDOM", "NONE"],
+        "answer": "ASC"
+    },
+    {
+        "question": "Which clause is used to group rows?",
+        "options": ["WHERE", "GROUP BY", "ORDER BY", "HAVING"],
+        "answer": "GROUP BY"
+    },
+    {
+        "question": "Which function returns the highest value?",
+        "options": ["TOP()", "MAX()", "HIGH()", "UPPER()"],
+        "answer": "MAX()"
+    },
+    {
+        "question": "What does NULL represent?",
+        "options": [
+            "Zero",
+            "Empty string",
+            "Unknown or missing value",
+            "False"
+        ],
+        "answer": "Unknown or missing value"
+    },
+    {
+        "question": "Which operator is used for pattern matching?",
+        "options": ["=", "LIKE", "IN", "BETWEEN"],
+        "answer": "LIKE"
+    },
+    {
+        "question": "What does IN operator do?",
+        "options": [
+            "Matches pattern",
+            "Checks range",
+            "Matches multiple values",
+            "Joins tables"
+        ],
+        "answer": "Matches multiple values"
+    },
+    {
+        "question": "Which keyword is used to sort results?",
+        "options": ["SORT", "ORDER", "ORDER BY", "ARRANGE"],
+        "answer": "ORDER BY"
+    },
+    {
+        "question": "Which join returns matching rows from both tables?",
+        "options": ["LEFT JOIN", "RIGHT JOIN", "INNER JOIN", "FULL JOIN"],
+        "answer": "INNER JOIN"
+    },
+    {
+        "question": "Which join returns all rows from left table?",
+        "options": ["INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "CROSS JOIN"],
+        "answer": "LEFT JOIN"
+    },
+    {
+        "question": "What does HAVING do?",
+        "options": [
+            "Filters before grouping",
+            "Filters after grouping",
+            "Sorts data",
+            "Joins tables"
+        ],
+        "answer": "Filters after grouping"
+    },
+    {
+        "question": "Which command adds new data?",
+        "options": ["ADD", "INSERT", "UPDATE", "CREATE"],
+        "answer": "INSERT"
+    },
+    {
+        "question": "Which command modifies existing data?",
+        "options": ["MODIFY", "CHANGE", "UPDATE", "ALTER"],
+        "answer": "UPDATE"
+    },
+    {
+        "question": "Which command deletes data?",
+        "options": ["REMOVE", "DELETE", "DROP", "CLEAR"],
+        "answer": "DELETE"
+    },
+    {
+        "question": "What is a primary key?",
+        "options": [
+            "Duplicate column",
+            "Unique identifier",
+            "Foreign column",
+            "Sorted column"
+        ],
+        "answer": "Unique identifier"
+    },
+    {
+        "question": "Which constraint ensures uniqueness?",
+        "options": ["NOT NULL", "UNIQUE", "CHECK", "DEFAULT"],
+        "answer": "UNIQUE"
+    },
+    {
+        "question": "Which function calculates average?",
+        "options": ["AVG()", "SUM()", "COUNT()", "MEAN()"],
+        "answer": "AVG()"
+    },
+    {
+        "question": "Which clause limits number of rows?",
+        "options": ["LIMIT", "TOP", "FETCH", "All of the above (depends on DB)"],
+        "answer": "All of the above (depends on DB)"
+    },
+    {
+        "question": "What does BETWEEN do?",
+        "options": [
+            "Filters exact values",
+            "Filters range",
+            "Filters nulls",
+            "Joins tables"
+        ],
+        "answer": "Filters range"
+    },
+    {
+        "question": "What is a foreign key?",
+        "options": [
+            "Unique key",
+            "Link between tables",
+            "Primary column",
+            "Sorted column"
+        ],
+        "answer": "Link between tables"
+    },
+    {
+        "question": "Which statement creates a table?",
+        "options": ["MAKE TABLE", "CREATE TABLE", "NEW TABLE", "BUILD TABLE"],
+        "answer": "CREATE TABLE"
     }
 ]
 
@@ -252,6 +408,50 @@ query_questions = [
         ],
         "answer_keywords": ["salary", "order by", "desc"],
         "correct_query": "SELECT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 2;"
+    },
+        {
+        "question": "Select all employees",
+        "table_name": "employees",
+        "columns": [("id","INT"),("name","TEXT")],
+        "sample_data": [(1,"A"),(2,"B")],
+        "answer_keywords": ["select", "*", "from employees"],
+        "correct_query": "SELECT * FROM employees;"
+    },
+    {
+        "question": "Find employees with salary > 50000",
+        "table_name": "employees",
+        "columns": [("id","INT"),("salary","INT")],
+        "sample_data": [(1,40000),(2,60000)],
+        "answer_keywords": ["salary", "50000", "where"],
+        "correct_query": "SELECT * FROM employees WHERE salary > 50000;"
+    },
+    {
+        "question": "Count total orders",
+        "table_name": "orders",
+        "columns": [("id","INT")],
+        "sample_data": [(1),(2),(3)],
+        "answer_keywords": ["count", "from orders"],
+        "correct_query": "SELECT COUNT(*) FROM orders;"
+    },
+    {
+        "question": "Count employees per department",
+        "table_name": "employees",
+        "columns": [("id","INT"),("department","TEXT")],
+        "sample_data": [(1,"IT"),(2,"HR"),(3,"IT")],
+        "answer_keywords": ["group by", "count", "department"],
+        "correct_query": "SELECT department, COUNT(*) FROM employees GROUP BY department;"
+    },
+    {
+        "question": "Join employees with departments",
+        "table_name": "employees/departments",
+        "columns": [
+            ("emp_id","INT"),
+            ("name","TEXT"),
+            ("dept_id","INT")
+        ],
+        "sample_data": [],
+        "answer_keywords": ["join", "on", "dept_id"],
+        "correct_query": "SELECT e.name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id;"
     }
 ]
 
@@ -260,7 +460,7 @@ query_questions = [
 # RESET FUNCTION
 # -----------------------------
 def reset_quiz():
-    keys_to_delete = ["mcq_set", "query_set", "submitted"]
+    keys_to_delete = ["mcq_set", "query_set", "submitted", "query_questions"]
 
     for key in keys_to_delete:
         if key in st.session_state:
@@ -319,9 +519,20 @@ def run_quiz(username, role):
         reset_quiz()
 
     # LOAD QUESTIONS
+    MCQ_LIMIT = 25
+    QUERY_LIMIT = 3
+
     if "mcq_set" not in st.session_state:
-        st.session_state.mcq_set = random.sample(mcq_questions, len(mcq_questions))
-        st.session_state.query_set = random.sample(query_questions, len(query_questions))
+        st.session_state.mcq_set = random.sample(
+            mcq_questions, 
+            min(MCQ_LIMIT, len(mcq_questions))
+        )
+
+    if "query_set" not in st.session_state:
+        st.session_state.query_set = random.sample(
+            query_questions, 
+            min(QUERY_LIMIT, len(query_questions))
+        )
 
     mcq_set = st.session_state.mcq_set
     query_set = st.session_state.query_set
@@ -336,10 +547,21 @@ def run_quiz(username, role):
     # -----------------------------
     st.header("📘 MCQs")
 
+    # INIT SHUFFLED OPTIONS (ONLY ONCE)
+    if "mcq_options" not in st.session_state:
+        st.session_state.mcq_options = []
+
+        for q in mcq_set:
+            opts = q["options"].copy()
+            random.shuffle(opts)
+            st.session_state.mcq_options.append(opts)
+
+
     for i, q in enumerate(mcq_set):
+        options = st.session_state.mcq_options[i]
         ans = st.radio(
             f"Q{i+1}. {q['question']}",
-            ["--"] + q["options"],
+            ["--"] + options,
             key=f"mcq_{i}",
             disabled=submitted
         )
