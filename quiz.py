@@ -303,7 +303,6 @@ def submit_quiz(username, mcq_set, query_set, mcq_answers, query_answers):
 
     return score, total, percent
 
-
 # -----------------------------
 # MAIN QUIZ FUNCTION
 # -----------------------------
