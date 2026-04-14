@@ -1,5 +1,5 @@
 import streamlit as st
-import sqlite3
+import psycopg2
 import pandas as pd
 from datetime import datetime
 import time
@@ -8,7 +8,18 @@ import random
 # -----------------------------
 # DB CONNECTION
 # -----------------------------
-conn = sqlite3.connect("progress.db", check_same_thread=False)
+
+@st.cache_resource
+def get_connection():
+    return psycopg2.connect(
+        host=st.secrets["DB_HOST"],
+        database=st.secrets["DB_NAME"],
+        user=st.secrets["DB_USER"],
+        password=st.secrets["DB_PASS"],
+        port="5432"
+    )
+
+conn = get_connection()
 cursor = conn.cursor()
 
 # -----------------------------
@@ -16,7 +27,7 @@ cursor = conn.cursor()
 # -----------------------------
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS quiz_results (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     username TEXT,
     score INTEGER,
     total INTEGER,
@@ -347,7 +358,7 @@ def run_quiz(username, role):
         # SAVE
         cursor.execute("""
         INSERT INTO quiz_results (username, score, total, percentage, submitted_at)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s)
         """, (username, score, total, percent,
               datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
@@ -368,7 +379,7 @@ def run_quiz(username, role):
     user_df = pd.read_sql_query("""
         SELECT score, total, percentage, submitted_at
         FROM quiz_results
-        WHERE username = ?
+        WHERE username = %s
         ORDER BY id DESC
     """, conn, params=(username,))
 
