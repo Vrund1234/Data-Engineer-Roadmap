@@ -2,13 +2,11 @@ import streamlit as st
 import psycopg2
 import pandas as pd
 from datetime import datetime
-import time
 import random
 
 # -----------------------------
 # DB CONNECTION
 # -----------------------------
-
 @st.cache_resource
 def get_connection():
     conn = psycopg2.connect(
@@ -31,6 +29,7 @@ def get_safe_connection():
         get_connection.clear()
         conn = get_connection()
     return conn
+
 
 # -----------------------------
 # INIT TABLE
@@ -257,7 +256,7 @@ query_questions = [
 # RESET FUNCTION
 # -----------------------------
 def reset_quiz():
-    keys_to_delete = ["start_time", "mcq_set", "query_set", "submitted"]
+    keys_to_delete = ["mcq_set", "query_set", "submitted"]
 
     for key in keys_to_delete:
         if key in st.session_state:
@@ -269,34 +268,54 @@ def reset_quiz():
 
     st.rerun()
 
+
 # -----------------------------
-# QUIZ FUNCTION
+# SUBMIT FUNCTION
+# -----------------------------
+def submit_quiz(username, mcq_set, query_set, mcq_answers, query_answers):
+    score = 0
+    total = len(mcq_set) + len(query_set)
+
+    # MCQ
+    for i, q in enumerate(mcq_set):
+        if mcq_answers[i] == q["answer"]:
+            score += 1
+
+    # QUERY
+    for i, q in enumerate(query_set):
+        user = query_answers[i].lower().strip()
+        if user and all(k in user for k in q["answer_keywords"]):
+            score += 1
+
+    percent = round((score / total) * 100, 2)
+
+    conn = get_safe_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT INTO quiz_results (username, score, total, percentage, submitted_at)
+    VALUES (%s, %s, %s, %s, %s)
+    """, (username, score, total, percent,
+          datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+    conn.commit()
+    cursor.close()
+
+    return score, total, percent
+
+
+# -----------------------------
+# MAIN QUIZ FUNCTION
 # -----------------------------
 def run_quiz(username, role):
 
     st.title("🧠 SQL Quiz (Pro Mode)")
 
     # RETAKE
-    if st.button("🔄 Retake Quiz"):
+    if st.button("🔄 Retake Quiz", key="retake_top"):
         reset_quiz()
 
-    # TIMER
-    QUIZ_DURATION = 600
-
-    if "start_time" not in st.session_state:
-        st.session_state.start_time = time.time()
-
-    elapsed = int(time.time() - st.session_state.start_time)
-    remaining = QUIZ_DURATION - elapsed
-
-    if remaining <= 0:
-        st.error("⏰ Time's up!")
-        st.button("🔄 Retake Quiz", on_click=reset_quiz)
-        st.stop()
-
-    st.warning(f"⏳ Time Left: {remaining} sec")
-
-    # RANDOM QUESTIONS
+    # LOAD QUESTIONS
     if "mcq_set" not in st.session_state:
         st.session_state.mcq_set = random.sample(mcq_questions, len(mcq_questions))
         st.session_state.query_set = random.sample(query_questions, len(query_questions))
@@ -307,14 +326,20 @@ def run_quiz(username, role):
     mcq_answers = []
     query_answers = []
 
+    submitted = st.session_state.get("submitted", False)
+
     # -----------------------------
     # MCQ
     # -----------------------------
     st.header("📘 MCQs")
 
     for i, q in enumerate(mcq_set):
-        st.subheader(f"Q{i+1}. {q['question']}")
-        ans = st.radio("Select:", ["--"] + q["options"], key=f"mcq_{i}")
+        ans = st.radio(
+            f"Q{i+1}. {q['question']}",
+            ["--"] + q["options"],
+            key=f"mcq_{i}",
+            disabled=submitted
+        )
         mcq_answers.append(ans)
 
     # -----------------------------
@@ -325,73 +350,35 @@ def run_quiz(username, role):
     for i, q in enumerate(query_set):
         st.subheader(f"Q{i+1}. {q['question']}")
 
-        # 👉 TABLE INFO
-        st.markdown(f"### 📂 Table: `{q['table_name']}`")
+        st.dataframe(pd.DataFrame(q["columns"], columns=["Column", "Type"]))
+        st.dataframe(pd.DataFrame(q["sample_data"], columns=[c[0] for c in q["columns"]]))
 
-        # 👉 COLUMN INFO
-        col_df = pd.DataFrame(q["columns"], columns=["Column Name", "Data Type"])
-        st.markdown("#### 🧱 Columns")
-        st.dataframe(col_df, use_container_width=True)
-
-        # 👉 SAMPLE DATA
-        sample_df = pd.DataFrame(q["sample_data"], columns=[col[0] for col in q["columns"]])
-        st.markdown("#### 📊 Sample Data")
-        st.dataframe(sample_df, use_container_width=True)
-
-        # 👉 INPUT
-        ans = st.text_area("Write SQL query:", key=f"query_{i}")
+        ans = st.text_area(
+            "Write SQL query:",
+            key=f"query_{i}",
+            disabled=submitted
+        )
         query_answers.append(ans)
 
     # -----------------------------
     # SUBMIT
     # -----------------------------
-    if st.button("Submit Quiz"):
+    if st.button("Submit Quiz", key="submit_btn") and not submitted:
 
         if "--" in mcq_answers:
             st.error("Answer all MCQs first")
             return
 
-        score = 0
-        total = len(mcq_set) + len(query_set)
+        st.session_state.submitted = True
 
-        # MCQ
-        for i, q in enumerate(mcq_set):
-            if mcq_answers[i] == q["answer"]:
-                score += 1
-
-        # QUERY
-        for i, q in enumerate(query_set):
-            user = query_answers[i].lower().strip()
-
-            if user and all(k in user for k in q["answer_keywords"]):
-                score += 1
-            else:
-                st.error(f"Query {i+1} ❌ Incorrect")
-
-        percent = round((score / total) * 100, 2)
+        score, total, percent = submit_quiz(
+            username, mcq_set, query_set, mcq_answers, query_answers
+        )
 
         st.success(f"🎯 Score: {score}/{total}")
         st.info(f"📊 Percentage: {percent}%")
 
-        # SAVE
-        conn = get_safe_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-        INSERT INTO quiz_results (username, score, total, percentage, submitted_at)
-        VALUES (%s, %s, %s, %s, %s)
-        """, (username, score, total, percent,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-
-        conn.commit()
-        cursor.close()
-
-        st.success("✅ Quiz Submitted Successfully!")
-
-        if "start_time" in st.session_state:
-            del st.session_state.start_time
-
-        st.button("🔄 Retake Quiz", on_click=reset_quiz)
+        st.button("🔄 Retake Quiz", key="retake_after_submit", on_click=reset_quiz)
 
     # -----------------------------
     # HISTORY
@@ -401,26 +388,24 @@ def run_quiz(username, role):
 
     conn = get_safe_connection()
 
-    user_df = pd.read_sql_query("""
+    df = pd.read_sql_query("""
         SELECT score, total, percentage, submitted_at
         FROM quiz_results
         WHERE username = %s
         ORDER BY id DESC
     """, conn, params=(username,))
 
-    if not user_df.empty:
-        st.dataframe(user_df, use_container_width=True)
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
     else:
         st.info("No quiz attempts yet 🚀")
 
     # -----------------------------
-    # ADMIN VIEW
+    # ADMIN
     # -----------------------------
     if role == "admin":
         st.markdown("---")
         st.subheader("📊 All Quiz Attempts")
-
-        conn = get_safe_connection()
 
         df = pd.read_sql_query("""
             SELECT username, score, total, percentage, submitted_at
