@@ -459,18 +459,31 @@ query_questions = [
 # -----------------------------
 # RESET FUNCTION
 # -----------------------------
+# def reset_quiz():
+#     keys_to_delete = ["mcq_set", "query_set", "submitted", "query_questions"]
+
+#     for key in keys_to_delete:
+#         if key in st.session_state:
+#             del st.session_state[key]
+
+#     for key in list(st.session_state.keys()):
+#         if key.startswith("mcq_") or key.startswith("query_"):
+#             del st.session_state[key]
+
+#     st.rerun()
+
 def reset_quiz():
-    keys_to_delete = ["mcq_set", "query_set", "submitted", "query_questions"]
+    keys_to_delete = [
+        "mcq_set", "query_set", "submitted",
+        "mcq_options", "score", "total", "percent"
+    ]
 
     for key in keys_to_delete:
-        if key in st.session_state:
-            del st.session_state[key]
+        st.session_state.pop(key, None)
 
     for key in list(st.session_state.keys()):
         if key.startswith("mcq_") or key.startswith("query_"):
-            del st.session_state[key]
-
-    st.rerun()
+            st.session_state.pop(key, None)
 
 
 # -----------------------------
