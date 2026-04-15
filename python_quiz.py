@@ -176,22 +176,43 @@ coding_questions = [
 # RESET
 # -----------------------------
 def reset_quiz():
-    keys = [
+    keys_to_delete = [
         "py_mcq_set",
+        "code_set",
         "py_mcq_options",
         "py_submitted",
-        "py_mcq_answers",
-        "py_code_answers",
-        "code_set",
         "score",
         "total",
-        "percent"
+        "percent",
+        "mcq_answers",
+        "code_answers",
     ]
 
-    for key in keys:
+    # delete main session keys
+    for key in keys_to_delete:
         if key in st.session_state:
             del st.session_state[key]
-    # st.rerun()
+
+    # remove widget states (VERY IMPORTANT)
+    for key in list(st.session_state.keys()):
+        if key.startswith("py_mcq_") or key.startswith("py_code_"):
+            del st.session_state[key]
+
+    st.rerun()
+
+
+# def reset_quiz():
+#     keys_to_delete = ["py_mcq_set", "code_set", "py_submitted", "coding_questions"]
+
+#     for key in keys_to_delete:
+#         if key in st.session_state:
+#             del st.session_state[key]
+
+#     for key in list(st.session_state.keys()):
+#         if key.startswith("py_mcq_") or key.startswith("py_code_"):
+#             del st.session_state[key]
+
+#     st.rerun()
 
 # -----------------------------
 # MAIN QUIZ
@@ -209,6 +230,14 @@ def run_python_quiz(username, role):
     if "code_set" not in st.session_state:
         st.session_state.code_set = random.sample(coding_questions, 3)
 
+    # IMPORTANT: reset options whenever quiz resets
+    if "py_mcq_options" not in st.session_state:
+        st.session_state.py_mcq_options = []
+        for q in st.session_state.py_mcq_set:
+            opts = q["options"].copy()
+            random.shuffle(opts)
+            st.session_state.py_mcq_options.append(opts)
+
     py_mcq_set = st.session_state.py_mcq_set
     code_set = st.session_state.code_set
 
@@ -220,12 +249,12 @@ def run_python_quiz(username, role):
     # MCQ
     st.header("📘 MCQs")
 
-    if "py_mcq_options" not in st.session_state:
-        st.session_state.py_mcq_options = []
-        for q in py_mcq_set:
-            opts = q["options"].copy()
-            random.shuffle(opts)
-            st.session_state.py_mcq_options.append(opts)
+    # if "py_mcq_options" not in st.session_state:
+    #     st.session_state.py_mcq_options = []
+    #     for q in py_mcq_set:
+    #         opts = q["options"].copy()
+    #         random.shuffle(opts)
+    #         st.session_state.py_mcq_options.append(opts)
 
     for i, q in enumerate(py_mcq_set):
         ans = st.radio(
@@ -285,6 +314,7 @@ def run_python_quiz(username, role):
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ))
 
+        conn.commit()
         cursor.close()
 
         # Store results
@@ -298,7 +328,11 @@ def run_python_quiz(username, role):
     # -----------------------------
     # RESULTS + REVIEW
     # -----------------------------
-    if st.session_state.get("py_submitted", False):
+    if (
+            st.session_state.get("py_submitted", False)
+            and "mcq_answers" in st.session_state
+            and "code_answers" in st.session_state
+        ):
 
         st.success(f"🎯 Score: {st.session_state.score}/{st.session_state.total}")
         st.info(f"📊 Percentage: {st.session_state.percent}%")

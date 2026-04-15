@@ -418,20 +418,28 @@ roadmap = {
 st.sidebar.title("Navigation")
 menu_option = st.sidebar.radio("Navigation", ["Roadmap", "SQL Quiz", "Python Quiz"])
 
+# -----------------------------
+# QUIZ NAVIGATION (FIXED)
+# -----------------------------
 if menu_option == "SQL Quiz":
+    # Clear ONLY python quiz state (safe cleanup)
     for key in list(st.session_state.keys()):
         if key.startswith("py_"):
             del st.session_state[key]
+
     run_quiz(username, role)
     st.stop()
 
+
 if menu_option == "Python Quiz":
+    # Clear ONLY sql quiz state (safe cleanup)
     for key in list(st.session_state.keys()):
-        if key.startswith("mcq_") or key.startswith("code_"):
+        if key.startswith("mcq_") or key.startswith("query_") or key in ["mcq_set", "query_set", "submitted"]:
             del st.session_state[key]
+
     run_python_quiz(username, role)
     st.stop()
-    
+
 selected_phase = st.sidebar.radio("Select Phase", list(roadmap.keys()))
 
 st.title("Data Engineer Roadmap")
