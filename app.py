@@ -432,10 +432,9 @@ if menu_option == "SQL Quiz":
 
 
 if menu_option == "Python Quiz":
-
-    # SAFE CLEANUP
+    # ONLY remove SQL quiz state, NOT full py_
     for key in list(st.session_state.keys()):
-        if key.startswith("py_"):
+        if key.startswith("mcq_") or key.startswith("query_") or key in ["mcq_set", "query_set", "submitted"]:
             del st.session_state[key]
 
     run_python_quiz(username, role)
