@@ -45,7 +45,7 @@ def init_db():
         score INTEGER,
         total INTEGER,
         percentage REAL,
-        submitted_at TEXT
+        py_submitted_at TEXT
     )
     """)
 
@@ -176,8 +176,20 @@ coding_questions = [
 # RESET
 # -----------------------------
 def reset_quiz():
-    for key in list(st.session_state.keys()):
-        if key.startswith("mcq_") or key.startswith("code_") or key in ["mcq_set", "code_set", "submitted"]:
+    keys = [
+        "py_mcq_set",
+        "py_mcq_options",
+        "py_submitted",
+        "py_mcq_answers",
+        "py_code_answers",
+        "code_set",
+        "score",
+        "total",
+        "percent"
+    ]
+
+    for key in keys:
+        if key in st.session_state:
             del st.session_state[key]
     # st.rerun()
 
@@ -191,36 +203,36 @@ def run_python_quiz(username, role):
     # if st.button("🔄 Retake Quiz"):
     #     reset_quiz()
 
-    if "mcq_set" not in st.session_state:
-        st.session_state.mcq_set = random.sample(mcq_questions, 25)
+    if "py_mcq_set" not in st.session_state:
+        st.session_state.py_mcq_set = random.sample(mcq_questions, 25)
 
     if "code_set" not in st.session_state:
         st.session_state.code_set = random.sample(coding_questions, 3)
 
-    mcq_set = st.session_state.mcq_set
+    py_mcq_set = st.session_state.py_mcq_set
     code_set = st.session_state.code_set
 
     mcq_answers = []
     code_answers = []
 
-    submitted = st.session_state.get("submitted", False)
+    py_submitted = st.session_state.get("py_submitted", False)
 
     # MCQ
     st.header("📘 MCQs")
 
-    if "mcq_options" not in st.session_state:
-        st.session_state.mcq_options = []
-        for q in mcq_set:
+    if "py_mcq_options" not in st.session_state:
+        st.session_state.py_mcq_options = []
+        for q in py_mcq_set:
             opts = q["options"].copy()
             random.shuffle(opts)
-            st.session_state.mcq_options.append(opts)
+            st.session_state.py_mcq_options.append(opts)
 
-    for i, q in enumerate(mcq_set):
+    for i, q in enumerate(py_mcq_set):
         ans = st.radio(
             f"Q{i+1}. {q['question']}",
-            ["--"] + st.session_state.mcq_options[i],
-            key=f"mcq_{i}",
-            disabled=submitted
+            ["--"] + st.session_state.py_mcq_options[i],
+            key=f"py_mcq_{i}",
+            disabled=py_submitted
         )
         mcq_answers.append(ans)
 
@@ -229,25 +241,25 @@ def run_python_quiz(username, role):
 
     for i, q in enumerate(code_set):
         st.subheader(q["question"])
-        ans = st.text_area("Write code:", key=f"code_{i}", disabled=submitted)
+        ans = st.text_area("Write code:", key=f"py_code_{i}", disabled=py_submitted)
         code_answers.append(ans)
 
     # -----------------------------
     # SUBMIT
     # -----------------------------
-    if st.button("Submit") and not submitted:
+    if st.button("Submit") and not py_submitted:
 
         if "--" in mcq_answers:
             st.error("Please answer all MCQs")
             return
 
-        st.session_state.submitted = True
+        st.session_state.py_submitted = True
 
         score = 0
-        total = len(mcq_set) + len(code_set)
+        total = len(py_mcq_set) + len(code_set)
 
         # MCQ scoring
-        for i, q in enumerate(mcq_set):
+        for i, q in enumerate(py_mcq_set):
             if mcq_answers[i] == q["answer"]:
                 score += 1
 
@@ -263,7 +275,7 @@ def run_python_quiz(username, role):
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO python_quiz_results (username, score, total, percentage, submitted_at)
+            INSERT INTO python_quiz_results (username, score, total, percentage, py_submitted_at)
             VALUES (%s, %s, %s, %s, %s)
         """, (
             username,
@@ -286,7 +298,7 @@ def run_python_quiz(username, role):
     # -----------------------------
     # RESULTS + REVIEW
     # -----------------------------
-    if st.session_state.get("submitted", False):
+    if st.session_state.get("py_submitted", False):
 
         st.success(f"🎯 Score: {st.session_state.score}/{st.session_state.total}")
         st.info(f"📊 Percentage: {st.session_state.percent}%")
@@ -297,7 +309,7 @@ def run_python_quiz(username, role):
         # MCQ REVIEW
         st.markdown("### 📘 MCQs Review")
 
-        for i, q in enumerate(mcq_set):
+        for i, q in enumerate(py_mcq_set):
             user_ans = st.session_state.mcq_answers[i]
             correct_ans = q["answer"]
 
