@@ -1860,7 +1860,7 @@ def calculate_progress(completed_dict: Dict[str, bool]) -> Dict[str, Any]:
 
     # Determine Data Engineer Rank Level
     if pct < 15:
-        rank = {"title": "🌱 DE Novice", "color": "#94A3B8", "desc": "Laying the CS and SQL foundation"}
+        rank = {"title": "🌱 DE Novice", "color": "#94A3B8", "desc": "Laying the Python and SQL foundation"}
     elif pct < 35:
         rank = {"title": "⚡ Data Apprentice", "color": "#3B82F6", "desc": "Mastering databases & Python scripts"}
     elif pct < 60:

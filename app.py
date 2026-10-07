@@ -361,7 +361,7 @@ if not st.session_state.authenticated:
     aligned with the industry standard [roadmap.sh/data-engineer](https://roadmap.sh/data-engineer).
     
     ### 🎯 What you'll master:
-    - **Stage 1**: CS, Python & SQL Foundations
+    - **Stage 1**: Python & SQL Foundations
     - **Stage 2**: Advanced SQL, Query Tuning & Relational Internals
     - **Stage 3**: Data Architecture, Lakehouses & Kimball Modeling
     - **Stage 4**: Distributed Computing with Apache Spark (PySpark)
