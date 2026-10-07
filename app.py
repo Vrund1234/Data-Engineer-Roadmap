@@ -743,23 +743,28 @@ for p in phase_options:
 
 if "cur_phase_idx" not in st.session_state:
     st.session_state.cur_phase_idx = 0
-if "phase_selector_sidebar" not in st.session_state:
-    st.session_state.phase_selector_sidebar = st.session_state.cur_phase_idx
 
 def go_to_stage(new_idx: int):
-    st.session_state.phase_selector_sidebar = new_idx
     st.session_state.cur_phase_idx = new_idx
+    if "phase_selector_sidebar" in st.session_state:
+        del st.session_state.phase_selector_sidebar
 
 # Professional compact sidebar stage selector (pure dropdown, search disabled)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📚 Learning Stages")
-selected_phase_idx = st.sidebar.selectbox(
+target_idx = st.session_state.cur_phase_idx
+if target_idx < 0 or target_idx >= len(phase_labels):
+    target_idx = 0
+    st.session_state.cur_phase_idx = 0
+
+selected_label = st.sidebar.selectbox(
     "Select Stage",
-    range(len(phase_options)),
-    format_func=lambda i: phase_labels[i],
+    phase_labels,
+    index=target_idx,
     key="phase_selector_sidebar",
     filter_mode=None
 )
+selected_phase_idx = phase_labels.index(selected_label) if selected_label in phase_labels else target_idx
 st.session_state.cur_phase_idx = selected_phase_idx
 
 # Sidebar compact stage progress bar
@@ -897,6 +902,8 @@ with col_b1:
                     st.session_state.completed[ak] = True
                     st.session_state[f"chk_{ak}"] = True
                     st.session_state[f"search_{ak}"] = True
+        if "phase_selector_sidebar" in st.session_state:
+            del st.session_state.phase_selector_sidebar
         st.success("All topics in this phase marked complete!")
         st.rerun()
 
@@ -915,6 +922,8 @@ with col_b2:
                     st.session_state.completed[ak] = False
                     st.session_state[f"chk_{ak}"] = False
                     st.session_state[f"search_{ak}"] = False
+        if "phase_selector_sidebar" in st.session_state:
+            del st.session_state.phase_selector_sidebar
         st.warning("All topics in this phase reset to incomplete.")
         st.rerun()
 
