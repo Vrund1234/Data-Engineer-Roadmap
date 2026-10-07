@@ -743,6 +743,37 @@ st.sidebar.caption(f"Stage Progress: **{cur_p_stat['percentage']}%** ({cur_p_sta
 selected_phase_name = phase_options[selected_phase_idx]
 selected_phase_info = roadmap_data.ROADMAP_DATA[selected_phase_name]
 
+# -----------------------------
+# TOPIC TOGGLE CALLBACKS
+# -----------------------------
+def toggle_topic_status(task_key: str, phase_name: str, cat_name: str, aliases: list):
+    widget_k = f"chk_{task_key}"
+    new_val = st.session_state.get(widget_k, False)
+    save_progress(username, task_key, new_val)
+    st.session_state.completed[task_key] = new_val
+    st.session_state[f"search_{task_key}"] = new_val
+    for alias in aliases:
+        ak = f"{phase_name}-{cat_name}-{alias}"
+        save_progress(username, ak, new_val)
+        st.session_state.completed[ak] = new_val
+        st.session_state[f"chk_{ak}"] = new_val
+        st.session_state[f"search_{ak}"] = new_val
+
+
+def toggle_search_status(task_key: str, phase_name: str, cat_name: str, aliases: list):
+    search_k = f"search_{task_key}"
+    new_val = st.session_state.get(search_k, False)
+    save_progress(username, task_key, new_val)
+    st.session_state.completed[task_key] = new_val
+    st.session_state[f"chk_{task_key}"] = new_val
+    for alias in aliases:
+        ak = f"{phase_name}-{cat_name}-{alias}"
+        save_progress(username, ak, new_val)
+        st.session_state.completed[ak] = new_val
+        st.session_state[f"chk_{ak}"] = new_val
+        st.session_state[f"search_{ak}"] = new_val
+
+
 # If search is active, show matching results across all phases
 if search_query.strip():
     st.subheader(f"🔍 Search Results for '{search_query.strip()}'")
@@ -761,15 +792,20 @@ if search_query.strip():
         for t in matching_topics:
             k = t["task_key"]
             is_checked = k in completed_set
-            
+            search_widget_k = f"search_{k}"
+            if search_widget_k not in st.session_state:
+                st.session_state[search_widget_k] = is_checked
+
             with st.container():
                 c1, c2 = st.columns([0.05, 0.95])
                 with c1:
-                    checked = st.checkbox("", value=is_checked, key=f"search_{k}")
-                    if checked != is_checked:
-                        save_progress(username, k, checked)
-                        st.session_state.completed[k] = checked
-                        st.rerun()
+                    st.checkbox(
+                        t["name"],
+                        key=search_widget_k,
+                        label_visibility="collapsed",
+                        on_change=toggle_search_status,
+                        args=(k, t["phase"], t["category"], t.get("aliases", []))
+                    )
                 with c2:
                     diff_badge = f"<span class='badge-pill badge-{t['difficulty'].lower()}'>{t['difficulty']}</span>"
                     must_badge = f"<span class='badge-pill badge-{t['importance'].lower().replace(' ', '-')}'>{t['importance']}</span>"
@@ -830,6 +866,14 @@ with col_b1:
                 k = f"{selected_phase_name}-{cat_name}-{t['name']}"
                 save_progress(username, k, True)
                 st.session_state.completed[k] = True
+                st.session_state[f"chk_{k}"] = True
+                st.session_state[f"search_{k}"] = True
+                for alias in t.get("aliases", []):
+                    ak = f"{selected_phase_name}-{cat_name}-{alias}"
+                    save_progress(username, ak, True)
+                    st.session_state.completed[ak] = True
+                    st.session_state[f"chk_{ak}"] = True
+                    st.session_state[f"search_{ak}"] = True
         st.success("All topics in this phase marked complete!")
         st.rerun()
 
@@ -840,6 +884,14 @@ with col_b2:
                 k = f"{selected_phase_name}-{cat_name}-{t['name']}"
                 save_progress(username, k, False)
                 st.session_state.completed[k] = False
+                st.session_state[f"chk_{k}"] = False
+                st.session_state[f"search_{k}"] = False
+                for alias in t.get("aliases", []):
+                    ak = f"{selected_phase_name}-{cat_name}-{alias}"
+                    save_progress(username, ak, False)
+                    st.session_state.completed[ak] = False
+                    st.session_state[f"chk_{ak}"] = False
+                    st.session_state[f"search_{ak}"] = False
         st.warning("All topics in this phase reset to incomplete.")
         st.rerun()
 
@@ -855,7 +907,7 @@ for category_name, topic_list in selected_phase_info["categories"].items():
         canon_key = f"{selected_phase_name}-{category_name}-{topic['name']}"
         
         # Determine if completed (checking canonical key or any historical alias)
-        is_completed = st.session_state.completed.get(canon_key, False)
+        is_completed = canon_key in completed_set
         if not is_completed:
             for alias in topic.get("aliases", []):
                 alias_key = f"{selected_phase_name}-{category_name}-{alias}"
@@ -871,29 +923,31 @@ for category_name, topic_list in selected_phase_info["categories"].items():
         if filter_difficulty != "All Levels" and topic["difficulty"] != filter_difficulty:
             continue
 
+        widget_k = f"chk_{canon_key}"
+        if widget_k not in st.session_state:
+            st.session_state[widget_k] = is_completed
+
         diff_class = topic["difficulty"].lower()
         imp_class = topic["importance"].lower().replace(" ", "-")
 
         with st.container():
             c_check, c_body = st.columns([0.04, 0.96])
             with c_check:
-                checked = st.checkbox(
-                    "",
-                    value=is_completed,
-                    key=f"chk_{canon_key}",
-                    label_visibility="collapsed"
+                st.checkbox(
+                    topic["name"],
+                    key=widget_k,
+                    label_visibility="collapsed",
+                    on_change=toggle_topic_status,
+                    args=(canon_key, selected_phase_name, category_name, topic.get("aliases", []))
                 )
-                if checked != is_completed:
-                    save_progress(username, canon_key, checked)
-                    st.session_state.completed[canon_key] = checked
-                    st.rerun()
 
             with c_body:
                 diff_pill = f"<span class='badge-pill badge-{diff_class}'>{topic['difficulty']}</span>"
                 imp_pill = f"<span class='badge-pill badge-{imp_class}'>{topic['importance']}</span>"
                 time_badge = f"<span style='color: #94A3B8; font-size: 0.75rem; font-weight: 500;'>⏱️ {topic['est_time']}</span>"
                 
-                name_style = "text-decoration: line-through; opacity: 0.65;" if is_completed else ""
+                is_checked_current = st.session_state.get(widget_k, is_completed)
+                name_style = "text-decoration: line-through; opacity: 0.65;" if is_checked_current else ""
                 st.markdown(f"<span style='font-size: 1.05rem; font-weight: 600; {name_style}'>{topic['name']}</span> &nbsp; {diff_pill}{imp_pill} {time_badge}", unsafe_allow_html=True)
                 st.write(topic["summary"])
 
