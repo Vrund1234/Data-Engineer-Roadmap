@@ -683,18 +683,47 @@ with col_s2:
 with col_s3:
     filter_difficulty = st.selectbox("Difficulty", ["All Levels", "Beginner", "Intermediate", "Advanced"])
 
-# Phase Selection with progress percentages
+# Clean stage display titles mapping
+PHASE_SHORT_TITLES = {
+    "Phase 1: SQL + Python Foundation": "Phase 1: SQL & Python Foundation",
+    "Phase 2: SQL Mastery and Databases": "Phase 2: SQL & Databases",
+    "Phase 3: Data Architecture": "Phase 3: Data Architecture",
+    "Phase 4: Data Pipelines and Big Data": "Phase 4: Pipelines & Spark",
+    "Phase 5: Databricks, Snowflake and Cloud": "Phase 5: Databricks & Cloud",
+    "Phase 6: Data Visualization": "Phase 6: Power BI & Analytics",
+    "Phase 7: Modern Orchestration & DataOps": "Phase 7: Airflow & DataOps",
+    "Phase 8: Streaming & Real-Time Data (Kafka & Flink)": "Phase 8: Streaming & Kafka",
+    "Phase 9: Transformation with dbt & Open Formats": "Phase 9: dbt & Lakehouses",
+    "Phase 10: Capstone Projects & DE Interview Masterclass": "Phase 10: Capstones & Interviews"
+}
+
 phase_options = list(roadmap_data.ROADMAP_DATA.keys())
 phase_labels = []
 for p in phase_options:
     p_meta = metrics["phase_metrics"].get(p, {"percentage": 0.0, "icon": "📌"})
-    phase_labels.append(f"{p_meta['icon']} {p} ({p_meta['percentage']}%)")
+    short_title = PHASE_SHORT_TITLES.get(p, p)
+    phase_labels.append(f"{p_meta['icon']} {short_title} ({p_meta['percentage']:.0f}%)")
 
-selected_phase_idx = st.sidebar.radio(
-    "Select Stage / Phase",
+if "cur_phase_idx" not in st.session_state:
+    st.session_state.cur_phase_idx = 0
+
+# Professional compact sidebar stage selector
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📚 Learning Stages")
+selected_phase_idx = st.sidebar.selectbox(
+    "Select Stage",
     range(len(phase_options)),
-    format_func=lambda i: phase_labels[i]
+    index=st.session_state.cur_phase_idx,
+    format_func=lambda i: phase_labels[i],
+    key="phase_selector_sidebar"
 )
+st.session_state.cur_phase_idx = selected_phase_idx
+
+# Sidebar compact stage progress bar
+cur_p_stat = metrics["phase_metrics"].get(phase_options[selected_phase_idx], {"percentage": 0.0, "completed": 0, "total": 0})
+st.sidebar.progress(cur_p_stat["percentage"] / 100.0)
+st.sidebar.caption(f"Stage Progress: **{cur_p_stat['percentage']}%** ({cur_p_stat['completed']}/{cur_p_stat['total']} topics)")
+
 selected_phase_name = phase_options[selected_phase_idx]
 selected_phase_info = roadmap_data.ROADMAP_DATA[selected_phase_name]
 
@@ -743,6 +772,33 @@ if search_query.strip():
 
 # Standard Phase View
 p_stat = metrics["phase_metrics"].get(selected_phase_name, {"percentage": 0.0, "completed": 0, "total": 0})
+
+# Stage Stepper Navigator
+nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
+with nav_col1:
+    if selected_phase_idx > 0:
+        if st.button("⬅️ Previous Stage", key="prev_top_btn", use_container_width=True):
+            st.session_state.cur_phase_idx = selected_phase_idx - 1
+            st.rerun()
+    else:
+        st.button("⬅️ Previous Stage", key="prev_top_dis", disabled=True, use_container_width=True)
+
+with nav_col2:
+    st.markdown(
+        f"<div style='text-align: center; font-size: 0.95rem; font-weight: 600; color: #94A3B8; padding-top: 6px;'>"
+        f"Stage <b>{selected_phase_idx + 1}</b> of <b>{len(phase_options)}</b>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+with nav_col3:
+    if selected_phase_idx < len(phase_options) - 1:
+        if st.button("Next Stage ➡️", key="next_top_btn", use_container_width=True):
+            st.session_state.cur_phase_idx = selected_phase_idx + 1
+            st.rerun()
+    else:
+        st.button("Next Stage ➡️", key="next_top_dis", disabled=True, use_container_width=True)
+
 
 st.markdown(f"""
 ### {selected_phase_info.get('icon', '📌')} {selected_phase_name}
@@ -847,3 +903,26 @@ for category_name, topic_list in selected_phase_info["categories"].items():
             st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
     
     st.markdown("---")
+
+# Bottom Stage Navigation
+st.write("")
+b_col1, b_col2, b_col3 = st.columns([1, 2, 1])
+with b_col1:
+    if selected_phase_idx > 0:
+        if st.button("⬅️ Previous Stage", key="prev_bot_btn", use_container_width=True):
+            st.session_state.cur_phase_idx = selected_phase_idx - 1
+            st.rerun()
+
+with b_col2:
+    st.markdown(
+        f"<div style='text-align: center; color: #64748B; font-size: 0.9rem; padding-top: 8px;'>"
+        f"Stage <b>{selected_phase_idx + 1} of {len(phase_options)}</b> completed? Proceed to next stage!"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+with b_col3:
+    if selected_phase_idx < len(phase_options) - 1:
+        if st.button("Next Stage ➡️", key="next_bot_btn", use_container_width=True):
+            st.session_state.cur_phase_idx = selected_phase_idx + 1
+            st.rerun()
