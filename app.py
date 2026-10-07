@@ -786,10 +786,11 @@ def toggle_topic_status(task_key: str, phase_name: str, cat_name: str, aliases: 
     st.session_state[f"search_{task_key}"] = new_val
     for alias in aliases:
         ak = f"{phase_name}-{cat_name}-{alias}"
-        save_progress(username, ak, new_val)
-        st.session_state.completed[ak] = new_val
-        st.session_state[f"chk_{ak}"] = new_val
-        st.session_state[f"search_{ak}"] = new_val
+        if not new_val:
+            save_progress(username, ak, False)
+            st.session_state.completed[ak] = False
+            st.session_state[f"chk_{ak}"] = False
+            st.session_state[f"search_{ak}"] = False
 
 
 def toggle_search_status(task_key: str, phase_name: str, cat_name: str, aliases: list):
@@ -800,10 +801,11 @@ def toggle_search_status(task_key: str, phase_name: str, cat_name: str, aliases:
     st.session_state[f"chk_{task_key}"] = new_val
     for alias in aliases:
         ak = f"{phase_name}-{cat_name}-{alias}"
-        save_progress(username, ak, new_val)
-        st.session_state.completed[ak] = new_val
-        st.session_state[f"chk_{ak}"] = new_val
-        st.session_state[f"search_{ak}"] = new_val
+        if not new_val:
+            save_progress(username, ak, False)
+            st.session_state.completed[ak] = False
+            st.session_state[f"chk_{ak}"] = False
+            st.session_state[f"search_{ak}"] = False
 
 
 # If search is active, show matching results across all phases

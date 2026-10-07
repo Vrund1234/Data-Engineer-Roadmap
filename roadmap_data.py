@@ -36,7 +36,7 @@ ROADMAP_DATA = {
                         {"title": "roadmap.sh SQL Guide", "url": "https://roadmap.sh/sql"},
                         {"title": "PostgreSQL Tutorial", "url": "https://www.postgresqltutorial.com/"}
                     ],
-                    "aliases": ["SQL Practice", "Aggregations (COUNT, SUM, AVG)"]
+                    "aliases": ["SQL Practice"]
                 },
                 {
                     "name": "SELECT Statement",
