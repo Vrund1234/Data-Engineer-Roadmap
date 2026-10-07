@@ -1860,15 +1860,15 @@ def calculate_progress(completed_dict: Dict[str, bool]) -> Dict[str, Any]:
 
     # Determine Data Engineer Rank Level
     if pct < 15:
-        rank = {"title": "🌱 DE Novice", "color": "#94A3B8", "desc": "Laying the Python and SQL foundation"}
+        rank = {"title": "🌱 DE Novice", "color": "#94A3B8", "desc": "Tier 1 • Foundation"}
     elif pct < 35:
-        rank = {"title": "⚡ Data Apprentice", "color": "#3B82F6", "desc": "Mastering databases & Python scripts"}
+        rank = {"title": "⚡ Data Apprentice", "color": "#3B82F6", "desc": "Tier 2 • Databases & Python"}
     elif pct < 60:
-        rank = {"title": "🚀 Pipeline Engineer", "color": "#F59E0B", "desc": "Building robust Spark & Big Data ETL"}
+        rank = {"title": "🚀 Pipeline Engineer", "color": "#F59E0B", "desc": "Tier 3 • Spark & Big Data"}
     elif pct < 85:
-        rank = {"title": "💎 Senior Data Specialist", "color": "#6366F1", "desc": "Orchestrating Lakehouses, Snowflake & Kafka"}
+        rank = {"title": "💎 Senior Specialist", "color": "#6366F1", "desc": "Tier 4 • Cloud Lakehouses"}
     else:
-        rank = {"title": "👑 Principal Data Architect", "color": "#10B981", "desc": "Mastery of end-to-end Data Engineering"}
+        rank = {"title": "👑 Data Architect", "color": "#10B981", "desc": "Tier 5 • Mastery"}
 
     # Calculate Phase breakdown
     phase_metrics = {}

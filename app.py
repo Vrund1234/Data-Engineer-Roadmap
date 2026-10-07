@@ -43,11 +43,20 @@ code, pre {
     border-radius: 12px;
     padding: 16px 20px;
     box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.2);
+    min-height: 122px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     transition: transform 0.2s ease, border-color 0.2s ease;
 }
 .de-kpi-card:hover {
     transform: translateY(-2px);
     border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Prevent buttons from truncating */
+button[data-testid*="baseButton"] {
+    white-space: nowrap !important;
 }
 
 .de-kpi-title {
@@ -654,7 +663,7 @@ with col_m3:
     <div class="de-kpi-card">
         <div class="de-kpi-title">Pending Topics</div>
         <div class="de-kpi-val" style="color: #F59E0B;">{pending_count}</div>
-        <div class="de-kpi-subtitle">Est. {pending_count * 2.5:.0f} learning hours</div>
+        <div class="de-kpi-subtitle">~{pending_count * 2.5:.0f} learning hours left</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -672,10 +681,10 @@ st.progress(metrics["percentage"] / 100.0)
 
 # Filter & Search Controls
 st.markdown("---")
-col_s1, col_s2, col_s3 = st.columns([2, 1, 1])
+col_s1, col_s2, col_s3 = st.columns([2.5, 1, 1])
 
 with col_s1:
-    search_query = st.text_input("🔍 Search any technology or topic (e.g., Spark, Kafka, Airflow, Window Functions, dbt)...", placeholder="Filter topics in real time...")
+    search_query = st.text_input("🔍 Search Topics", placeholder="e.g. Spark, Kafka, Airflow, Window Functions, dbt...")
 
 with col_s2:
     filter_status = st.selectbox("Status", ["All Topics", "Pending", "Completed"])
@@ -806,9 +815,9 @@ st.markdown(f"""
 """)
 
 # Quick Bulk Actions for Phase
-col_b1, col_b2, _ = st.columns([1, 1, 3])
+col_b1, col_b2, _ = st.columns([1.5, 1.5, 3])
 with col_b1:
-    if st.button("✅ Mark All in Phase Complete", key=f"mark_all_{selected_phase_name}"):
+    if st.button("✅ Mark Phase Done", key=f"mark_all_{selected_phase_name}", use_container_width=True):
         for cat_name, t_list in selected_phase_info["categories"].items():
             for t in t_list:
                 k = f"{selected_phase_name}-{cat_name}-{t['name']}"
@@ -818,7 +827,7 @@ with col_b1:
         st.rerun()
 
 with col_b2:
-    if st.button("🔄 Mark All in Phase Incomplete", key=f"unmark_all_{selected_phase_name}"):
+    if st.button("🔄 Reset Phase", key=f"unmark_all_{selected_phase_name}", use_container_width=True):
         for cat_name, t_list in selected_phase_info["categories"].items():
             for t in t_list:
                 k = f"{selected_phase_name}-{cat_name}-{t['name']}"
