@@ -59,6 +59,12 @@ button[data-testid*="baseButton"] {
     white-space: nowrap !important;
 }
 
+/* Make selectbox behave as a pure dropdown without search caret */
+div[data-baseweb="select"] input {
+    caret-color: transparent !important;
+    cursor: pointer !important;
+}
+
 .de-kpi-title {
     font-size: 0.85rem;
     font-weight: 500;
@@ -345,7 +351,7 @@ st.sidebar.title("🚀 Data Engineer Portal")
 
 if not st.session_state.authenticated:
     st.sidebar.subheader("Authentication")
-    auth_mode = st.sidebar.selectbox("Choose Mode", ["Login", "Sign Up"])
+    auth_mode = st.sidebar.selectbox("Choose Mode", ["Login", "Sign Up"], filter_mode=None)
     u_input = st.sidebar.text_input("Username", key="auth_user")
     p_input = st.sidebar.text_input("Password", type="password", key="auth_pass")
 
@@ -687,10 +693,10 @@ with col_s1:
     search_query = st.text_input("🔍 Search Topics", placeholder="e.g. Spark, Kafka, Airflow, Window Functions, dbt...")
 
 with col_s2:
-    filter_status = st.selectbox("Status", ["All Topics", "Pending", "Completed"])
+    filter_status = st.selectbox("Status", ["All Topics", "Pending", "Completed"], filter_mode=None)
 
 with col_s3:
-    filter_difficulty = st.selectbox("Difficulty", ["All Levels", "Beginner", "Intermediate", "Advanced"])
+    filter_difficulty = st.selectbox("Difficulty", ["All Levels", "Beginner", "Intermediate", "Advanced"], filter_mode=None)
 
 # Clean stage display titles mapping
 PHASE_SHORT_TITLES = {
@@ -716,7 +722,7 @@ for p in phase_options:
 if "cur_phase_idx" not in st.session_state:
     st.session_state.cur_phase_idx = 0
 
-# Professional compact sidebar stage selector
+# Professional compact sidebar stage selector (pure dropdown, search disabled)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📚 Learning Stages")
 selected_phase_idx = st.sidebar.selectbox(
@@ -724,7 +730,8 @@ selected_phase_idx = st.sidebar.selectbox(
     range(len(phase_options)),
     index=st.session_state.cur_phase_idx,
     format_func=lambda i: phase_labels[i],
-    key="phase_selector_sidebar"
+    key="phase_selector_sidebar",
+    filter_mode=None
 )
 st.session_state.cur_phase_idx = selected_phase_idx
 
