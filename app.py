@@ -743,6 +743,12 @@ for p in phase_options:
 
 if "cur_phase_idx" not in st.session_state:
     st.session_state.cur_phase_idx = 0
+if "phase_selector_sidebar" not in st.session_state:
+    st.session_state.phase_selector_sidebar = st.session_state.cur_phase_idx
+
+def go_to_stage(new_idx: int):
+    st.session_state.phase_selector_sidebar = new_idx
+    st.session_state.cur_phase_idx = new_idx
 
 # Professional compact sidebar stage selector (pure dropdown, search disabled)
 st.sidebar.markdown("---")
@@ -750,7 +756,6 @@ st.sidebar.markdown("### 📚 Learning Stages")
 selected_phase_idx = st.sidebar.selectbox(
     "Select Stage",
     range(len(phase_options)),
-    index=st.session_state.cur_phase_idx,
     format_func=lambda i: phase_labels[i],
     key="phase_selector_sidebar",
     filter_mode=None
@@ -851,9 +856,7 @@ p_stat = metrics["phase_metrics"].get(selected_phase_name, {"percentage": 0.0, "
 nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
 with nav_col1:
     if selected_phase_idx > 0:
-        if st.button("⬅️ Previous Stage", key="prev_top_btn", use_container_width=True):
-            st.session_state.cur_phase_idx = selected_phase_idx - 1
-            st.rerun()
+        st.button("⬅️ Previous Stage", key="prev_top_btn", on_click=go_to_stage, args=(selected_phase_idx - 1,), use_container_width=True)
     else:
         st.button("⬅️ Previous Stage", key="prev_top_dis", disabled=True, use_container_width=True)
 
@@ -867,9 +870,7 @@ with nav_col2:
 
 with nav_col3:
     if selected_phase_idx < len(phase_options) - 1:
-        if st.button("Next Stage ➡️", key="next_top_btn", use_container_width=True):
-            st.session_state.cur_phase_idx = selected_phase_idx + 1
-            st.rerun()
+        st.button("Next Stage ➡️", key="next_top_btn", on_click=go_to_stage, args=(selected_phase_idx + 1,), use_container_width=True)
     else:
         st.button("Next Stage ➡️", key="next_top_dis", disabled=True, use_container_width=True)
 
@@ -1001,9 +1002,7 @@ st.write("")
 b_col1, b_col2, b_col3 = st.columns([1, 2, 1])
 with b_col1:
     if selected_phase_idx > 0:
-        if st.button("⬅️ Previous Stage", key="prev_bot_btn", use_container_width=True):
-            st.session_state.cur_phase_idx = selected_phase_idx - 1
-            st.rerun()
+        st.button("⬅️ Previous Stage", key="prev_bot_btn", on_click=go_to_stage, args=(selected_phase_idx - 1,), use_container_width=True)
 
 with b_col2:
     st.markdown(
@@ -1015,6 +1014,4 @@ with b_col2:
 
 with b_col3:
     if selected_phase_idx < len(phase_options) - 1:
-        if st.button("Next Stage ➡️", key="next_bot_btn", use_container_width=True):
-            st.session_state.cur_phase_idx = selected_phase_idx + 1
-            st.rerun()
+        st.button("Next Stage ➡️", key="next_bot_btn", on_click=go_to_stage, args=(selected_phase_idx + 1,), use_container_width=True)
