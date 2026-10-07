@@ -357,9 +357,6 @@ if not st.session_state.authenticated:
     # Splash presentation for unauthenticated visitors
     st.title("🌟 Data Engineer Roadmap (2026 Edition)")
     st.markdown("""
-    Welcome to the **definitive step-by-step roadmap to becoming a production-grade Data Engineer**, 
-    aligned with the industry standard [roadmap.sh/data-engineer](https://roadmap.sh/data-engineer).
-    
     ### 🎯 What you'll master:
     - **Stage 1**: Python & SQL Foundations
     - **Stage 2**: Advanced SQL, Query Tuning & Relational Internals
@@ -514,7 +511,7 @@ elif nav_selection == "⚙️ Admin Panel":
 elif nav_selection == "📊 Visual Pipeline Flow":
     st.title("📊 End-to-End Data Engineering Pipeline Flow")
     st.markdown("""
-    Visual representation of the **Modern Data Engineering Lifecycle** as outlined in [roadmap.sh/data-engineer](https://roadmap.sh/data-engineer).
+    Visual representation of the **Modern Data Engineering Lifecycle**.
     Every skill in this roadmap connects directly to a stage in this production flow.
     """)
 
@@ -618,7 +615,7 @@ elif nav_selection == "📜 Certification Guide":
 # MAIN: ROADMAP TRACKER
 # -----------------------------
 st.title("🗺️ Modern Data Engineer Roadmap (2026)")
-st.markdown("Systematic curriculum inspired by [roadmap.sh/data-engineer](https://roadmap.sh/data-engineer) with interactive progress tracking.")
+st.markdown("Systematic curriculum with interactive progress tracking.")
 
 # Top Metrics Banner
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
