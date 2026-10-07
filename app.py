@@ -41,13 +41,17 @@ code, pre {
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 16px 20px;
+    padding: 16px 18px;
     box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.2);
-    min-height: 122px;
+    height: 126px;
+    min-height: 126px;
+    max-height: 126px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     transition: transform 0.2s ease, border-color 0.2s ease;
+    overflow: hidden;
 }
 .de-kpi-card:hover {
     transform: translateY(-2px);
@@ -66,25 +70,43 @@ div[data-baseweb="select"] input {
 }
 
 .de-kpi-title {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.8rem;
+    font-weight: 600;
     color: #94A3B8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 6px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .de-kpi-val {
-    font-size: 1.8rem;
+    font-size: 1.75rem;
     font-weight: 800;
     color: #F8FAFC;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.de-kpi-val-rank {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .de-kpi-subtitle {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: #64748B;
-    margin-top: 4px;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Topic Card */
@@ -658,8 +680,8 @@ with col_m2:
     st.markdown(f"""
     <div class="de-kpi-card">
         <div class="de-kpi-title">Current DE Rank</div>
-        <div class="de-kpi-val" style="color: {metrics['rank']['color']};">{metrics['rank']['title']}</div>
-        <div class="de-kpi-subtitle">{metrics['rank']['desc']}</div>
+        <div class="de-kpi-val de-kpi-val-rank" style="color: {metrics['rank']['color']};" title="{metrics['rank']['title']}">{metrics['rank']['title']}</div>
+        <div class="de-kpi-subtitle" title="{metrics['rank']['desc']}">{metrics['rank']['desc']}</div>
     </div>
     """, unsafe_allow_html=True)
 
